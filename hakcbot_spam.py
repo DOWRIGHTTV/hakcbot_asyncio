@@ -48,18 +48,20 @@ class Spam:
     async def urlFilter(self, user, message, subscriber, badges):
         message_block = False
         blacklist = False
-        urlmatch = re.findall(URL, message)
+        url_match = re.findall(URL, message)
         for blacklist_word in self.blacklist:
             if blacklist_word in message:
                 message_block = True
                 blacklist = True
                 break
-        if (urlmatch):
+
+        print(url_match)
+        if (url_match):
             if ('vip/1' in badges or subscriber == 'subscriber=1'
                     or user in self.permitlist):
                 pass
             else:
-                message_block, urlmatch = await self.URLCheck(urlmatch)
+                message_block, urlmatch = await self.URLCheck(url_match)
 
         if (message_block):
             print(f'BLOCKED || {user} : {urlmatch}')
