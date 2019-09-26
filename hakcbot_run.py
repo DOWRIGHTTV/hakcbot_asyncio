@@ -92,11 +92,15 @@ class Run:
         except Exception as E:
             print(f'AsyncIO General Error | {E}')
 
-    async def SendMessage(self, message):
+    async def SendMessage(self, message, response=None):
         loop = asyncio.get_running_loop()
-        mT = f'PRIVMSG #{CHANNEL} :{message}'
-        await loop.sock_sendall(self.Hakcbot.sock, f'{mT}\r\n'.encode('utf-8'))
         print(f'hakcbot: {message}')
+        message = f'PRIVMSG #{CHANNEL} :{message}'
+
+        await loop.sock_sendall(self.Hakcbot.sock, f'{message}\r\n'.encode('utf-8'))
+        if (response):
+            response = f'PRIVMSG #{CHANNEL} :{response}'
+            await loop.sock_sendall(self.Hakcbot.sock.send, f'{response}\r\n'.encode("utf-8"))
 
 class Automate:
     def __init__(self, Hakcbot):
