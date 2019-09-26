@@ -36,7 +36,7 @@ class Commands:
         CD = self.commands[command]['cd_time']
 
         if (command == 'uptime'):
-            message = self.Hakcbot.Threads.uptime_message
+            message = self.Hakcbot.uptime_message
 
         if (command == 'time'):
             current_time = time.localtime()

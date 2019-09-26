@@ -28,6 +28,7 @@ class Run:
         self.linecount = 0
 
         self.online = False
+        self.uptime_message = 'DOWRIGHT is OFFLINE.'
 
         with open('roles.json', 'r') as roles:
             role = json.load(roles)
@@ -119,7 +120,7 @@ class Automate:
 
     async def AutomateTimeout(self):
         while True:
-            if not self.flag_for_timeout:
+            if (not self.flag_for_timeout):
                 await asyncio.sleep(1)
                 continue
 

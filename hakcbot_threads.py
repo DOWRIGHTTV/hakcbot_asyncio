@@ -11,7 +11,6 @@ class Threads:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-        self.uptime_message = 'DOWRIGHT is OFFLINE.'
         self.account_age_whitelist = set()
         self.account_age_queue = deque()
 
@@ -53,8 +52,6 @@ class Threads:
         try:
             account_age = requests.get(f'https://decapi.me/twitch/accountage/{user}?precision=7')
             account_age = account_age.text.strip('\n')
-
-            print(account_age)
         except Exception:
             error = True
 

@@ -27,7 +27,7 @@ class Spam:
             user, message, subscriber, badges = await self.FormatLine(line)
             await self.HakcbotModComms(user, message)
 
-            print(f'AA WL: {self.account_age_whitelist}')
+#            print(f'AA WL: {self.account_age_whitelist}')
             if (user not in self.account_age_whitelist
                     and user not in self.account_age_check_inprogress):
                 self.account_age_check_inprogress.add(user)
@@ -36,7 +36,7 @@ class Spam:
             spam = await self.urlFilter(user, message, subscriber, badges)
 
             return(spam)
-        except Exception as E:
+        except Exception:
             traceback.print_exc()
 
     async def AddtoAccountAgeQueue(self, user):
