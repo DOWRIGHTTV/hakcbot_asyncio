@@ -177,8 +177,6 @@ class Spam:
             subscriber = tags[9]
             badges = tags[1]
 
-            user = self.user_tuple()
-
             if (username in self.Hakcbot.mod_list):
                 mod = True
             if (subscriber == 'subscriber=1'):
