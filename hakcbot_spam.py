@@ -49,11 +49,10 @@ class Spam:
     # if not whitelisted then checking urls for more specific url qualities like known TLDs
     # then timeing out user and notifying chat.
     async def URLFilter(self, user, message):
-        blacklist = False
-        message_block = False
+        block_url = False
         url_match = re.findall(URL, message)
         blacklisted_word = await self.CheckBlacklist(message)
-        if (not blacklist and url_match and not user.mod
+        if (not blacklisted_word and url_match and not user.mod
                 and not user.subscriber and not user.permit):
             block_url, url_match = await self.URLCheck(url_match)
 
