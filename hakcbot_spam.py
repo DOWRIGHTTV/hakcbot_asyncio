@@ -183,7 +183,7 @@ class Spam:
                 subscriber = True
             if ('vip/1' in badges):
                 vip = True
-            if (user in self.permitlist):
+            if (username in self.permitlist):
                 permit = True
 
             user = self.user_tuple(username, mod, subscriber, vip, permit)
