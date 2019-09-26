@@ -67,7 +67,7 @@ class Spam:
 
             print(f'BLOCKED || {user} : {url_match}')
 
-        if (blacklisted_word or message_block):
+        if (blacklisted_word or block_url):
             await self.Hakcbot.SendMessage(message, response)
 
             return True
