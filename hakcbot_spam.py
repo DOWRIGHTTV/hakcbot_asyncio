@@ -3,73 +3,75 @@
 import re
 import time
 import json
-import threading
+import requests
+import traceback
 import asyncio
 
 from config import CHANNEL
+from regex import *
+
 
 class Spam:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
-        self.tlds = set([])
+        self.tlds = set()
         self.permitlist = set([])
-
-        self.addwl = re.compile(r'addwl\((.*?)\)')
-        self.delwl = re.compile(r'delwl\((.*?)\)')
-#        self.whitelist = {'pastebin.com', 'twitch.tv', 'github.com', 'automatetheboringstuff.com'} # PEP 8 IS BULLSHIT......FAIL
-
-        self.permituser = re.compile(r'permit\((.*?)\)')
-        self.urlregex = re.compile(
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z]{2,}\.?)|' # Domain
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # IP Address
-        r'(?::\d+)?' # Optional Port eg :8080
-        r'(?:/?|[/?]\S+)', re.IGNORECASE) # Sepcific pages in url eg /homepage
-
-        self.tagsreg = re.compile(r'@badge-info=(.*?)user-type=')
-        self.msgreg = re.compile(r'user-type=(.*)')
-
-#        self.WhitelistAdjust()
-
         self.whitelist = {}
+
+        self.account_age_check_inprogress = set()
+        self.account_age_whitelist = set()
 
     # Main method, creating a wrapper/ logic around other functional methods
     async def Main(self, line):
-        self.line = line
         try:
-            await self.FormatLine()
-            await self.HakcbotModComms()
-            spam = await self.urlFilter()
+            user, message, subscriber, badges = await self.FormatLine(line)
+            await self.HakcbotModComms(user, message)
+
+            print(f'AA WL: {self.account_age_whitelist}')
+            if (user not in self.account_age_whitelist
+                    and user not in self.account_age_check_inprogress):
+                self.account_age_check_inprogress.add(user)
+                await self.AddtoAccountAgeQueue(user)
+
+            spam = await self.urlFilter(user, message, subscriber, badges)
+
             return(spam)
         except Exception as E:
-            print(E)
+            traceback.print_exc()
+
+    async def AddtoAccountAgeQueue(self, user):
+        self.Hakcbot.Threads.account_age_queue.append(user)
 
     # checkin message for url regex match, then checking whitelisted users and whitelisted urls,
     # if not whitelisted then checking urls for more specific url qualities like known TLDs
     # then timeing out user and notifying chat.
-    async def urlFilter(self):
+    async def urlFilter(self, user, message, subscriber, badges):
         message_block = False
         blacklist = False
-        urlmatch = re.findall(self.urlregex, self.msg)
+        urlmatch = re.findall(URL, message)
         for blacklist_word in self.blacklist:
-            if blacklist_word in self.msg:
+            if blacklist_word in message:
                 message_block = True
                 blacklist = True
                 break
         if (urlmatch):
-            if ('vip/1' in self.badges or self.subscriber == 'subscriber=1' \
-            or self.user in self.permitlist):
+            if ('vip/1' in badges or subscriber == 'subscriber=1'
+                    or user in self.permitlist):
                 pass
             else:
-                message_block, urlmatch = self.URLCheck(urlmatch)
+                message_block, urlmatch = await self.URLCheck(urlmatch)
+
         if (message_block):
-            print(f'BLOCKED || {self.user} : {urlmatch}')
+            print(f'BLOCKED || {user} : {urlmatch}')
             if (blacklist):
-                message = f'/timeout {self.user} {10} {blacklist_word}'
-                response = f'{self.user}, you are a bad boi and used a blacklisted word.'
+                message = f'/timeout {user} {10} {blacklist_word}'
+                response = f'{user}, you are a bad boi and used a blacklisted word.'
             else:
-                message = f'/timeout {self.user} {10} {urlmatch}'
-                response = f'{self.user}, ask for permission to post links.'
+                message = f'/timeout {user} {10} {urlmatch}'
+                response = f'{user}, ask for permission to post links.'
+
             await self.SendMessage(message, response)
+
             return True
 
     ## Method to adjust URL whitelist on mod command, will call itself if list is updated
@@ -101,26 +103,30 @@ class Spam:
 
     # method to permit users to post urls for 3 minutes, untimeing out just in case they
     # where arlready timed out, only allowing chat mods to do the command
-    async def HakcbotModComms(self):
-        if (self.user in self.Hakcbot.mod_list):
-            if ('permit(' in self.msg):
-                if ('!' in self.msg or '/' in self.msg or '.' in self.msg or ' ' in self.msg):
+    async def HakcbotModComms(self, user, message):
+        if (user in self.Hakcbot.mod_list):
+            if ('permit(' in message):
+                if ('!' in message or '/' in message or '.' in message or ' ' in message):
                     pass
                 else:
-                    user = re.findall(self.permituser, self.msg)[0]
-                    threading.Thread(target=self.HakcbotPermitThread, args=(user,)).start()
-                    message = f'/untimeout {self.user}'
+                    user = re.findall(PERMIT_USER, message)[0]
+                    await self.HakcbotPermitThread(user)
+
+                    message = f'/untimeout {user}'
                     response = f'{user} can post links for 3 minutes.'
+
                     await self.SendMessage(message, response)
 
-            elif ('addwl(' in self.msg):
+            elif ('addwl(' in message):
                 action = True
-                url = re.findall(self.addwl, self.msg)[0]
-                self.WhitelistAdjust(url, action)
-            elif('delwl(' in self.msg):
+                url = re.findall(ADD_WL, message)[0]
+
+                await self.WhitelistAdjust(url, action)
+            elif('delwl(' in message):
                 action = False
-                url = re.findall(self.delwl, self.msg)[0]
-                self.WhitelistAdjust(url, action)
+                url = re.findall(DEL_WL, message)[0]
+
+                await self.WhitelistAdjust(url, action)
 
     # Thread to add user to whitelist set, then remove after 3 minutes.
     async def HakcbotPermitThread(self, user):
@@ -155,17 +161,20 @@ class Spam:
                     self.tlds.add(tld.strip('\n').lower())
 
     # Formatting/Parsing messages to be looked at for generally filter policies.
-    async def FormatLine(self):
+    async def FormatLine(self, line):
         try:
-            tags = re.findall(self.tagsreg, self.line)[0]
-            msg = re.findall(self.msgreg, self.line)[0]
+            tags = re.findall(USER_TAGS, line)[0]
+            msg = re.findall(MESSAGE, line)[0]
             msg = msg.split(':', 2)
             tags = tags.split(';')
             user = msg[1].split('!')
-            self.user = user[0]
-            self.msg = msg[2]
-            self.subscriber = tags[9]
-            self.badges = tags[1]
+
+            user = user[0]
+            message = msg[2]
+            subscriber = tags[9]
+            badges = tags[1]
+
+            return user, message, subscriber, badges
         except Exception:
             raise Exception('Spam Format Line Error')
 

@@ -7,8 +7,10 @@ import time
 import traceback
 
 from config import *
+from collections import deque
 
 from hakcbot_init import Hakcbot
+from hakcbot_threads import Threads
 from hakcbot_execute import Execute
 from hakcbot_spam import Spam
 from hakcbot_commands import Commands
@@ -17,6 +19,7 @@ class Run:
     def __init__(self):
         self.Hakcbot = Hakcbot()
 
+        self.Threads = Threads(self)
         self.Automate = Automate(self)
         self.Execute = Execute(self)
         self.Spam = Spam(self)
@@ -31,6 +34,7 @@ class Run:
         self.mod_list = role['user_roles']['mods']
 
     def Start(self):
+        self.Threads.Start()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -43,7 +47,7 @@ class Run:
         await self.Spam.BlacklistAdjust()
         await self.Spam.WhitelistAdjust()
 
-        await asyncio.gather(self.Hakc(), self.Hakc2(), self.CheckOnline())
+        await asyncio.gather(self.Hakc(), self.Hakc2())
 
     async def Hakc(self):
         loop = asyncio.get_running_loop()
@@ -84,7 +88,6 @@ class Run:
 
         try:
             await asyncio.gather(*[self.Automate.Timers(cmds[t], timers[t]) for t in range(t_count)])
-
         except Exception as E:
             print(f'AsyncIO General Error | {E}')
 
@@ -94,43 +97,38 @@ class Run:
         await loop.sock_sendall(self.Hakcbot.sock, f'{mT}\r\n'.encode('utf-8'))
         print(f'hakcbot: {message}')
 
-    async def CheckOnline(self):
-        loop = asyncio.get_running_loop()
-        ## start thread to contuously check if online
-        await loop.run_in_executor(None, self.Automate.CheckOnline)
-
 class Automate:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-        with open('commands.json', 'r') as cmds:
-            commands = json.load(cmds)
-
-        self.commands = commands['standard']
+        self.flag_for_timeout = deque()
 
     async def Timers(self, cmd, timer):
         try:
-            message = self.commands[cmd]['message']
+            message = self.Hakcbot.Commands.commands[cmd]['message']
             while True:
                 await asyncio.sleep(60 * timer)
                 print(f'Line Count: {self.Hakcbot.linecount}')
-                if (self.Hakcbot.linecount >= 3 and getattr(self.Hakcbot.Commands, f'hakc{cmd.lower()}')):
-                    self.Hakcbot.SendMessage(message)
-                elif (not getattr(self.Hakcbot.Commands, f'hakc{cmd.lower()}')):
+                cooldown = getattr(self.Hakcbot.Commands, f'hakc{cmd}')
+                if (not cooldown and self.Hakcbot.linecount >= 3):
+                    await self.Hakcbot.SendMessage(message)
+                elif (cooldown):
                     print(f'hakcbot: {cmd} command on cooldown')
         except Exception as E:
             print(f'AsyncIO Timer Error: {E}')
 
-    def CheckOnline(self):
+    async def AutomateTimeout(self):
         while True:
-            uptime = requests.get("https://decapi.me/twitch/uptime?channel=dowright")
-            uptime = uptime.text.strip('\n')
-            if (uptime != 'dowright is offline'):
-                self.Hakcbot.online = True
-            else:
-                self.Hakcbot.online = False
+            if not self.flag_for_timeout:
+                await asyncio.sleep(1)
+                continue
 
-            time.sleep(60 * 10)
+            while self.flag_for_timeout:
+                user = self.flag_for_timeout.popleft()
+                message = f'/timeout {user} 3600 account age less than one day.'
+#            response = f'sorry {user}, accounts must be older than 1 day to talk in chat.'
+
+                await self.Hakcbot.SendMessage(message)
 
 def Main():
     Hakcbot = Run()

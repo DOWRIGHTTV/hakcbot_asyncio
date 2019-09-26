@@ -26,14 +26,15 @@ class Execute:
             traceback.print_exc()
 
     async def ParseMessage(self, user, msg):
+        now = time.time()
         ## Checking each word in message for a command. if a command is found will switch go to be true
         ## which will prevent any further checks. this makes it so only the first command gets ran.
         for word in msg:
             word = word.lower().strip('\r')
             command = word.strip('()')
             if (command in self.Hakcbot.Commands.commands and word.endswith('()')):
-                cooldown = getattr(self.Hakcbot.Commands, f'{command}_cooldown')
-                if (not cooldown or user in self.Hakcbot.mod_list):
+                cd_expire = getattr(self.Hakcbot.Commands, f'hakc{command}')
+                if (now > cd_expire or user in self.Hakcbot.mod_list):
                     command, CD = await self.Hakcbot.Commands.HandleCommand(user, msg, command)
 
                     await self.Cooldown(command, CD)
@@ -58,8 +59,8 @@ class Execute:
         return user, msg, subscriber, badges
 
     async def Cooldown(self, command, CD):
-        print(f'Putting {command} on cooldown')
-        setattr(self, command, True)
-        await asyncio.sleep(CD)
-        print(f"Removing {command}'s cooldown")
-        setattr(self, command, False)
+        cd_expire = time.time() + CD
+
+        print(f'Putting {command} on cooldown.')
+        setattr(self.Hakcbot.Commands, f'hakc{command}', cd_expire)
+
