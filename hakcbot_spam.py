@@ -56,6 +56,7 @@ class Spam:
                 and not user.subscriber and not user.permit):
             block_url, url_match = await self.URLCheck(url_match)
 
+        print(f'URL: {url_match} | BLOCK?: {block_url} | USER: {user}')
         if (blacklisted_word):
             message = f'/timeout {user.name} {10} {blacklisted_word}'
             response = f'{user}, you are a bad boi and used a blacklisted word.'
@@ -117,7 +118,7 @@ class Spam:
         ## Checking all urls in urlmatch, if a match is found and it is not whitelisted or
         ## doesnt meet the other filter requirements then it will return True to mark the message
         ## to be blocked as well as the offending url. If no match, then will return False.
-        numbers = {'-', '0', '1','2','3','4','5','6','7','8','9'}
+        numbers = ['-', '0', '1','2','3','4','5','6','7','8','9']
         for match in urlmatch:
             tld = match.split('.')[-1].strip('/')
             if (match not in self.whitelist):
