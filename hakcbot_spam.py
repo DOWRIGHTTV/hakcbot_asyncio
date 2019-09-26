@@ -52,19 +52,18 @@ class Spam:
         blacklist = False
         message_block = False
         url_match = re.findall(URL, message)
-        blacklisted_word = self.CheckBlacklist(message)
-        print(url_match)
+        blacklisted_word = await self.CheckBlacklist(message)
         if (not blacklist and url_match and not user.mod
                 and not user.subscriber and not user.permit):
             block_url, url_match = await self.URLCheck(url_match)
 
         if (blacklisted_word):
-            message = f'/timeout {user} {10} {blacklisted_word}'
+            message = f'/timeout {user.name} {10} {blacklisted_word}'
             response = f'{user}, you are a bad boi and used a blacklisted word.'
 
             print(f'BLOCKED || {user} : {blacklisted_word}')
         elif (block_url):
-            message = f'/timeout {user} {10} {url_match}'
+            message = f'/timeout {user.name} {10} {url_match}'
             response = f'{user}, ask for permission to post links.'
 
             print(f'BLOCKED || {user} : {url_match}')
