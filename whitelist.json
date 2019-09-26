@@ -1,0 +1,11 @@
+{
+    "Whitelist": {
+        "URLS": {
+            "pastebin.com" : 1, 
+            "twitch.tv": 1, 
+            "github.com": 1, 
+            "automatetheboringstuff.com": 1
+        }
+    }
+}
+  
