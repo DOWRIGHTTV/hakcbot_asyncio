@@ -53,7 +53,7 @@ class Spam:
         url_match = re.findall(URL, message)
         blacklisted_word = await self.CheckBlacklist(message)
         if (not blacklisted_word and url_match and not user.mod
-                and not user.subscriber and not user.permit):
+                and not user.sub and not user.permit):
             block_url, url_match = await self.URLCheck(url_match)
 
         print(f'URL: {url_match} | BLOCK?: {block_url} | USER: {user}')
