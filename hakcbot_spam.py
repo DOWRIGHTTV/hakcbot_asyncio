@@ -22,7 +22,7 @@ class Spam:
         self.account_age_check_inprogress = set()
         self.account_age_whitelist = set()
 
-        self.user_tuple = namedtuple('user', 'name mod subscriber vip permit')
+        self.user_tuple = namedtuple('user', 'name mod sub vip permit')
 
     # Main method, creating a wrapper/ logic around other functional methods
     async def Main(self, line):
