@@ -160,7 +160,7 @@ class Spam:
     # Formatting/Parsing messages to be looked at for generally filter policies.
     async def FormatLine(self, line):
         mod = False
-        subscriber = False
+        sub = False
         vip = False
         permit = False
         try:
@@ -179,13 +179,13 @@ class Spam:
             if (username in self.Hakcbot.mod_list):
                 mod = True
             if (subscriber == 'subscriber=1'):
-                subscriber = True
+                sub = True
             if ('vip/1' in badges):
                 vip = True
             if (username in self.permitlist):
                 permit = True
 
-            user = self.user_tuple(username, mod, subscriber, vip, permit)
+            user = self.user_tuple(username, mod, sub, vip, permit)
 
             return user, message
         except Exception:
