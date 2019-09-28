@@ -16,7 +16,7 @@ class Spam:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
         self.tlds = set()
-        self.permitlist = set([])
+        self.permit_list = set()
         self.whitelist = {}
 
         self.account_age_check_inprogress = set()
@@ -52,6 +52,7 @@ class Spam:
         block_url = False
         url_match = re.findall(URL, message)
         blacklisted_word = await self.CheckBlacklist(message)
+        print(user)
         if (not blacklisted_word and url_match and not user.mod
                 and not user.sub and not user.permit):
             block_url, url_match = await self.URLCheck(url_match)
@@ -59,12 +60,12 @@ class Spam:
         print(f'URL: {url_match} | BLOCK?: {block_url} | USER: {user}')
         if (blacklisted_word):
             message = f'/timeout {user.name} {10} {blacklisted_word}'
-            response = f'{user}, you are a bad boi and used a blacklisted word.'
+            response = f'{user.name}, you are a bad boi and used a blacklisted word.'
 
             print(f'BLOCKED || {user} : {blacklisted_word}')
         elif (block_url):
             message = f'/timeout {user.name} {10} {url_match}'
-            response = f'{user}, ask for permission to post links.'
+            response = f'{user.name}, ask for permission to post links.'
 
             print(f'BLOCKED || {user} : {url_match}')
 
@@ -108,9 +109,9 @@ class Spam:
 
     # Thread to add user to whitelist set, then remove after 3 minutes.
     async def HakcbotPermitThread(self, user):
-        self.permitlist.add(user.lower())
+        self.permit_list.add(user.lower())
         await asyncio.sleep(60 * 3)
-        self.permitlist.remove(user.lower())
+        self.permit_list.remove(user.lower())
 
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
     # triggering url/link filter
@@ -182,7 +183,7 @@ class Spam:
                 sub = True
             if ('vip/1' in badges):
                 vip = True
-            if (username in self.permitlist):
+            if (username in self.permit_list):
                 permit = True
 
             user = self.user_tuple(username, mod, sub, vip, permit)
