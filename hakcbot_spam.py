@@ -62,12 +62,12 @@ class Spam:
             message = f'/timeout {user.name} {10} {blacklisted_word}'
             response = f'{user.name}, you are a bad boi and used a blacklisted word.'
 
-            print(f'BLOCKED || {user} : {blacklisted_word}')
+            print(f'BLOCKED || {user} : {blacklisted_word}') # want to see user tuple here
         elif (block_url):
             message = f'/timeout {user.name} {10} {url_match}'
             response = f'{user.name}, ask for permission to post links.'
 
-            print(f'BLOCKED || {user} : {url_match}')
+            print(f'BLOCKED || {user} : {url_match}') # want to see user tuple here
 
         if (blacklisted_word or block_url):
             await self.Hakcbot.SendMessage(message, response)
