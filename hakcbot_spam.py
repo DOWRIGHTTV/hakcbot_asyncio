@@ -89,7 +89,7 @@ class Spam:
                 valid_message = await self.ValidateCommand(message)
                 if (valid_message):
                     username = re.findall(PERMIT_USER, message)[0]
-                    await self.HakcbotPermitThread(username, message)
+                    await self.HakcbotPermitThread(username, length=3)
 
                     message = f'/untimeout {username}'
                     response = f'{username} can post links for 3 minutes.'
@@ -108,10 +108,10 @@ class Spam:
                 await self.WhitelistAdjust(url, action)
 
     # Thread to add user to whitelist set, then remove after 3 minutes.
-    async def HakcbotPermitThread(self, username):
+    async def HakcbotPermitThread(self, username, length=3):
         self.permit_list.add(username)
         print(f'permitted {username}')
-        await asyncio.sleep(60 * 3)
+        await asyncio.sleep(60 * length)
         self.permit_list.remove(username)
         print(f'removing permit from {username}')
 
