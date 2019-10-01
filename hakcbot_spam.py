@@ -111,7 +111,7 @@ class Spam:
     async def HakcbotPermitThread(self, username, length=3):
         self.permit_list[username] = time.time() + (length*60)
         print(f'ADDED permit user: {username} | length: {length}')
-        asyncio.sleep(60 * length)
+        await asyncio.sleep(60 * length)
         self.permit_list.pop(username, None)
         print(f'REMOVED permit user: {username} | length: {length}')
 
