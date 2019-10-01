@@ -16,7 +16,7 @@ class Spam:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
         self.tlds = set()
-        self.permit_list = set()
+        self.permit_list = {}
         self.whitelist = {}
 
         self.account_age_check_inprogress = set()
@@ -109,10 +109,10 @@ class Spam:
 
     # Thread to add user to whitelist set, then remove after 3 minutes.
     async def HakcbotPermitThread(self, username, length=3):
-        self.permit_list.add(username)
+        self.permit_list[username] = time.time() + (length*60)
         print(f'ADDED permit user: {username} | length: {length}')
-        await asyncio.sleep(60 * length)
-        self.permit_list.remove(username)
+        asyncio.sleep(60 * length)
+        self.permit_list.pop(username, None)
         print(f'REMOVED permit user: {username} | length: {length}')
 
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
