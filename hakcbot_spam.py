@@ -88,11 +88,11 @@ class Spam:
             if ('permit(' in message):
                 valid_message = self.ValidateCommand(message)
                 if (valid_message):
-                    user = re.findall(PERMIT_USER, message)[0]
-                    await self.HakcbotPermitThread(user.name)
+                    username = re.findall(PERMIT_USER, message)[0]
+                    await self.HakcbotPermitThread(username, message)
 
-                    message = f'/untimeout {user}'
-                    response = f'{user} can post links for 3 minutes.'
+                    message = f'/untimeout {username}'
+                    response = f'{username} can post links for 3 minutes.'
 
                     await self.Hakcbot.SendMessage(message, response)
 
