@@ -8,7 +8,7 @@ from config import *
 class Hakcbot:
     def __init__(self):
         self.sock = socket()
-#        self.sock.setblocking(0)
+        self.sock.setblocking(0)
 
     async def Connect(self):
         await self.openSocket()

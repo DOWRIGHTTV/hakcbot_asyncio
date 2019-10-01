@@ -109,11 +109,9 @@ class Spam:
 
     # Thread to add user to whitelist set, then remove after 3 minutes.
     async def HakcbotPermitThread(self, username, length=3):
-        self.permit_list[username] = time.time() + (length*60)
+        permit_duration = length * 60
+        self.permit_list[username] = time.time() + permit_duration
         print(f'ADDED permit user: {username} | length: {length}')
-        await asyncio.sleep(60 * length)
-        self.permit_list.pop(username, None)
-        print(f'REMOVED permit user: {username} | length: {length}')
 
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
     # triggering url/link filter
@@ -185,8 +183,16 @@ class Spam:
                 sub = True
             if ('vip/1' in badges):
                 vip = True
-            if (username in self.permit_list):
-                permit = True
+
+            now = time.time()
+            permit = self.permit_list.get(username, None)
+            if (permit):
+                # marking user to be permitted for a link head of time
+                if (permit > now):
+                    permit = True
+                # if expiration detected, will remove user from dict. temporary until better cleaning solution is implemented
+                else:
+                    self.permit_list.pop(username)
 
             user = self.user_tuple(username, mod, sub, vip, permit)
 
