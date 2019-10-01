@@ -89,7 +89,7 @@ class Spam:
                 valid_message = await self.ValidateCommand(message)
                 if (valid_message):
                     username = re.findall(PERMIT_USER, message)[0]
-                    await self.HakcbotPermitThread(username, length=3)
+                    await self.HakcbotPermitThread(username.lower(), length=3)
 
                     message = f'/untimeout {username}'
                     response = f'{username} can post links for 3 minutes.'
@@ -185,10 +185,10 @@ class Spam:
                 vip = True
 
             now = time.time()
-            permit = self.permit_list.get(username, None)
-            if (permit):
+            permit_link_expire = self.permit_list.get(username, None)
+            if (permit_link_expire):
                 # marking user to be permitted for a link head of time
-                if (permit > now):
+                if (now < permit_link_expire):
                     permit = True
                 # if expiration detected, will remove user from dict. temporary until better cleaning solution is implemented
                 else:
