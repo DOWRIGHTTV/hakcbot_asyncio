@@ -110,10 +110,10 @@ class Spam:
     # Thread to add user to whitelist set, then remove after 3 minutes.
     async def HakcbotPermitThread(self, username, length=3):
         self.permit_list.add(username)
-        print(f'permitted {username}')
+        print(f'ADDED permit user: {username} | length: {length}')
         await asyncio.sleep(60 * length)
         self.permit_list.remove(username)
-        print(f'removing permit from {username}')
+        print(f'REMOVED permit user: {username} | length: {length}')
 
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
     # triggering url/link filter
