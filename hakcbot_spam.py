@@ -86,7 +86,7 @@ class Spam:
     async def HakcbotModComms(self, user, message):
         if (user.mod):
             if ('permit(' in message):
-                valid_message = self.ValidateCommand(message)
+                valid_message = await self.ValidateCommand(message)
                 if (valid_message):
                     username = re.findall(PERMIT_USER, message)[0]
                     await self.HakcbotPermitThread(username, message)
