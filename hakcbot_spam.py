@@ -58,7 +58,7 @@ class Spam:
                 and not user.vip and not user.sub and not user.permit):
             block_url, url_match = await self.URLCheck(url_match)
 
-        print(f'URL: {url_match} | BLOCK?: {block_url} | USER: {user}')
+#        print(f'URL: {url_match} | BLOCK?: {block_url} | USER: {user}')
         if (blacklisted_word):
             message = f'/timeout {user.name} {10} {blacklisted_word}'
             response = f'{user.name}, you are a bad boi and used a blacklisted word.'
@@ -84,6 +84,7 @@ class Spam:
 
     # method to permit users to post urls for 3 minutes, untimeing out just in case they
     # where arlready timed out, only allowing chat mods to do the command
+    # NOTE: INACTIVE
     async def HakcbotModComms(self, user, message):
         if (user.mod):
             if ('permit(' in message):
@@ -109,6 +110,7 @@ class Spam:
                 await self.WhitelistAdjust(url, action)
 
     # Thread to add user to whitelist set, then remove after 3 minutes.
+    # NOTE: INACTIVE
     async def HakcbotPermitThread(self, username, length=3):
         permit_duration = length * 60
         self.permit_list[username] = time.time() + permit_duration
@@ -153,9 +155,6 @@ class Spam:
         if (write):
             write_to_file(whitelist, 'whitelist.json')
             await self.WhitelistAdjust()
-
-        print('loaded whitelist into memory.')
-        print(f'{self.url_whitelist}')
 
     async def BlacklistAdjust(self, url=None, action=None):
         blacklist = load_from_file('blacklist.json')
