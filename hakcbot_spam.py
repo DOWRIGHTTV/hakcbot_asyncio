@@ -136,18 +136,19 @@ class Spam:
     ## Method to adjust URL whitelist on mod command, will call itself if list is updated
     ## to update running set white bot is running
     async def WhitelistAdjust(self, url=None, action=None):
-        write = False
         whitelist = load_from_file('whitelist.json')
 
+        write = False
         self.url_whitelist = whitelist['Whitelist']['URLS']
-        if (action is True):
-            self.url_whitelist.update({url: '1'})
-            print(f'hakcbot: added {url} to whitelist')
-            write = True
-        elif action is False:
-            self.url_whitelist.pop(url, None)
-            print(f'hakcbot: removed {url} from whitelist')
-            write = True
+        if (url and action):
+            if (action is True):
+                self.url_whitelist.update({url: '1'})
+                print(f'hakcbot: added {url} to whitelist')
+                write = True
+            elif action is False:
+                self.url_whitelist.pop(url, None)
+                print(f'hakcbot: removed {url} from whitelist')
+                write = True
 
         if (write):
             write_to_file(whitelist, 'whitelist.json')

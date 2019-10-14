@@ -37,6 +37,8 @@ class Run:
 
     def Start(self):
         self.Threads.Start()
+        self.Spam.WhitelistAdjust()
+        self.Spam.BlacklistAdjust()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -70,6 +72,8 @@ class Run:
                     elif ('PRIVMSG' in line):
                         blocked_message, user, message = await self.Spam.Main(line)
                         if (not blocked_message):
+                            print(f'{user}: {message}')
+
                             await self.Execute.ParseMessage(user, message)
                             self.linecount += 1
 
