@@ -70,7 +70,7 @@ class Run:
                     elif ('PRIVMSG' in line):
                         blocked_message, user, message = await self.Spam.Main(line)
                         if (not blocked_message):
-                            print(f'{user}: {message}')
+                            print(f'{user.name}: {message}')
 
                             await self.Execute.ParseMessage(user, message)
                             self.linecount += 1
