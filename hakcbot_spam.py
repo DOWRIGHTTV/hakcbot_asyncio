@@ -205,7 +205,7 @@ class Spam:
         with open('TLDs') as TLDs:
             for tld in TLDs:
                 if len(tld) <= 6:
-                    self.tlds.add(tld.strip('\n').lower())
+                    self.domain_tlds.add(tld.strip('\n').lower())
 
     async def ValidateCommand(self, message):
         if ('!' in message or '/' in message or '.' in message or ' ' in message):
