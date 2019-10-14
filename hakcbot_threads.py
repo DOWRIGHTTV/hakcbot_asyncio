@@ -34,7 +34,7 @@ class Threads:
                 message = 'DOWRIGHT is OFFLINE'
             elif (not error):
                 self.Hakcbot.online = True
-                message = self.Hakcbot.Commands.commands['uptime']['message']
+                message = self.Hakcbot.Commands.standard_commands['uptime']['message']
                 message = f'{message} {uptime}'
             else:
                 message = 'Hakcbot is currently being a dumb dumb. :/'
