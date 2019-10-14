@@ -9,3 +9,7 @@ def load_from_file(filename):
         settings = json.load(settings)
 
     return settings
+
+def write_to_file(data, filename, folder='data'):
+    with open(f'{filename}', 'w') as settings:
+        json.dump(data, settings, indent=4)
