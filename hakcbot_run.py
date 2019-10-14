@@ -37,8 +37,6 @@ class Run:
 
     def Start(self):
         self.Threads.Start()
-        self.Spam.WhitelistAdjust()
-        self.Spam.BlacklistAdjust()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)

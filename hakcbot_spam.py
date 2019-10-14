@@ -154,16 +154,16 @@ class Spam:
             write_to_file(whitelist, 'whitelist.json')
             await self.WhitelistAdjust()
 
+        print('loaded whitelist into memory.')
+        print(f'{self.url_whitelist}')
+
     async def BlacklistAdjust(self, url=None, action=None):
         blacklist = load_from_file('blacklist.json')
         self.blacklist = blacklist['Blacklist']['Words']
 
     # Formatting/Parsing messages to be looked at for generally filter policies.
     async def FormatLine(self, line):
-        mod = False
-        sub = False
-        vip = False
-        permit = False
+        mod, sub, vip, permit = False, False, False, False
         try:
             tags = re.findall(USER_TAGS, line)[0]
             msg = re.findall(MESSAGE, line)[0]
