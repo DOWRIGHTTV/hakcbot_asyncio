@@ -111,7 +111,7 @@ class Automate:
 
     async def Timers(self, cmd, timer):
         try:
-            message = self.Hakcbot.Commands.commands[cmd]['message']
+            message = self.Hakcbot.Commands.standard_commands[cmd]['message']
             while True:
                 await asyncio.sleep(60 * timer)
                 print(f'Line Count: {self.Hakcbot.linecount}')
