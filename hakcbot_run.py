@@ -9,6 +9,8 @@ import traceback
 from config import *
 from collections import deque
 
+from hakcbot_utilities import load_from_file
+
 from hakcbot_init import Hakcbot
 from hakcbot_threads import Threads
 from hakcbot_execute import Execute
@@ -30,9 +32,8 @@ class Run:
         self.online = False
         self.uptime_message = 'DOWRIGHT is OFFLINE.'
 
-        with open('roles.json', 'r') as roles:
-            role = json.load(roles)
-        self.mod_list = role['user_roles']['mods']
+        roles = load_from_file('roles.json')
+        self.mod_list = roles['user_roles']['mods']
 
     def Start(self):
         self.Threads.Start()
@@ -67,9 +68,9 @@ class Run:
                         await loop.sock_sendall(self.Hakcbot.sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
 
                     elif ('PRIVMSG' in line):
-                        spam = await self.Spam.Main(line)
-                        if (not spam):
-                            await self.Execute.Main(line)
+                        blocked_message, user, message = await self.Spam.Main(line)
+                        if (not blocked_message):
+                            await self.Execute.ParseMessage(user, message)
                             self.linecount += 1
 
                     elif ('JOIN' in line):

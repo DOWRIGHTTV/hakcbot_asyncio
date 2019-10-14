@@ -19,22 +19,32 @@ class Threads:
         threading.Thread(target=self.AccountAgeQueue).start()
 
     def Uptime(self):
+        print('[+] Starting Uptime tracking thread.')
         while True:
-            uptime = requests.get("https://decapi.me/twitch/uptime?channel=dowright")
-            uptime = uptime.text.strip('\n')
-            if (uptime == 'dowright is offline'):
+            error = False
+            # if there is a problem resolving or looking up the uptime, the bot will show an error message
+            try:
+                uptime = requests.get("https://decapi.me/twitch/uptime?channel=dowright")
+                uptime = uptime.text.strip('\n')
+            except Exception:
+                error = True
+
+            if (not error and uptime == 'dowright is offline'):
                 self.Hakcbot.online = False
                 message = 'DOWRIGHT is OFFLINE'
-            else:
+            elif (not error):
                 self.Hakcbot.online = True
                 message = self.Hakcbot.Commands.commands['uptime']['message']
                 message = f'{message} {uptime}'
+            else:
+                message = 'Hakcbot is currently being a dumb dumb. :/'
 
             self.Hakcbot.uptime_message = message
 
             time.sleep(90)
 
     def AccountAgeQueue(self):
+        print('[+] Starting Uptime tracking thread.')
         while True:
             if (not self.account_age_queue):
                 time.sleep(1)
@@ -46,7 +56,6 @@ class Threads:
                 threading.Thread(target=self.CheckAccountAge, args=(user,)).start()
 
     def CheckAccountAge(self, user):
-#        print(f'IN PROG: {self.Hakcbot.Spam.account_age_check_inprogress}')
         error = False
         # if there is a problem resolving or looking up the account age, the bot will auto allow
         try:

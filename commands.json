@@ -21,7 +21,7 @@
             "cd_time": 180
         },
         "hakcbot": {
-            "message": "Hakcbot is the bot that is currently auto modding DOWRIGHT's channel. Check it out here: https://github.com/DOWRIGHTTV/Hakcbot",
+            "message": "Hakcbot is the bot that is currently auto modding DOWRIGHT's channel. Check it out here: https://github.com/DOWRIGHTTV/hakcbot_asyncio",
             "cd_name": "hakchakcbot",
             "cd_time": 180
         },
@@ -59,6 +59,27 @@
             "message": "See a technical demo of DNX here: https://youtu.be/6NvRXlNjpOc",
             "cd_name": "hakcdemo",
             "cd_time": 120
+        }
+    },
+    "non_standard": {
+        "quote": {
+            "cd_name": "hakcquote",
+            "cd_time": 60
+        },
+        "praise": {
+            "message": "\ [T] /",
+            "cd_name": "hakcpraise",
+            "cd_time": 30
+        },
+        "yourmom": {
+            "message": "mom goes to college.",
+            "cd_name": "hakcyourmom",
+            "cd_time": 180
+        },
+        "yourmum": {
+            "message": "mum goes to college.",
+            "cd_name": "hakcyourmum",
+            "cd_time": 60
         }
     },
     "automated": {

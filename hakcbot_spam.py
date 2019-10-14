@@ -7,6 +7,8 @@ import requests
 import traceback
 import asyncio
 
+from hakcbot_utilities import load_from_file, write_to_file
+
 from config import CHANNEL
 from regex import *
 from collections import namedtuple
@@ -15,9 +17,9 @@ from collections import namedtuple
 class Spam:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
-        self.tlds = set()
+        self.domain_tlds = set()
         self.permit_list = {}
-        self.whitelist = {}
+        self.url_whitelist = {}
 
         self.account_age_check_inprogress = set()
         self.account_age_whitelist = set()
@@ -36,9 +38,9 @@ class Spam:
                 self.account_age_check_inprogress.add(user)
                 await self.AddtoAccountAgeQueue(user)
 
-            spam = await self.URLFilter(user, message)
+            blocked_message = await self.URLFilter(user, message)
 
-            return(spam)
+            return blocked_message, user, message
         except Exception:
             traceback.print_exc()
 
@@ -120,12 +122,13 @@ class Spam:
         ## to be blocked as well as the offending url. If no match, then will return False.
         numbers = ['-', '0', '1','2','3','4','5','6','7','8','9']
         for match in urlmatch:
+            match = match.strip('/')
             tld = match.split('.')[-1].strip('/')
-            if (match not in self.whitelist):
+            if (match not in self.url_whitelist):
                 for number in numbers:
                     if number in match:
                         return True, match
-                if tld in self.tlds:
+                if tld in self.domain_tlds:
                     return True, match
         else:
             return False, None
@@ -134,27 +137,24 @@ class Spam:
     ## to update running set white bot is running
     async def WhitelistAdjust(self, url=None, action=None):
         write = False
-        with open('whitelist.json', 'r') as whitelists:
-            whitelist = json.load(whitelists)
+        whitelist = load_from_file('whitelist.json')
 
-        self.whitelist = whitelist['Whitelist']['URLS']
+        self.url_whitelist = whitelist['Whitelist']['URLS']
         if (action is True):
-            self.whitelist.update({url: '1'})
+            self.url_whitelist.update({url: '1'})
             print(f'hakcbot: added {url} to whitelist')
             write = True
         elif action is False:
-            self.whitelist.pop(url, None)
+            self.url_whitelist.pop(url, None)
             print(f'hakcbot: removed {url} from whitelist')
             write = True
 
         if (write):
-            with open('whitelist.json', 'w') as whitelists:
-                json.dump(whitelist, whitelists, indent=4)
+            write_to_file(whitelist, 'whitelist.json')
             await self.WhitelistAdjust()
 
     async def BlacklistAdjust(self, url=None, action=None):
-        with open('blacklist.json', 'r') as blacklists:
-            blacklist = json.load(blacklists)
+        blacklist = load_from_file('blacklist.json')
         self.blacklist = blacklist['Blacklist']['Words']
 
     # Formatting/Parsing messages to be looked at for generally filter policies.

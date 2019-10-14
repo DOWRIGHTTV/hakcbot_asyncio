@@ -7,33 +7,39 @@ import asyncio
 import requests
 
 from regex import *
+from hakcbot_utilities import load_from_file
 
 
 class Commands:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-        with open('commands.json', 'r') as cmds:
-            commands = json.load(cmds)
-        self.commands = commands['standard']
+        commands = load_from_file('commands.json')
+        self.standard_commands = commands['standard']
+        self.non_standard_commands = commands['non_standard']
         self.automated = commands['automated']
 
-        with open('quotes.json', 'r') as quotes:
-            quote = json.load(quotes)
-        self.quotes = quote['quotes']
+        quotes = load_from_file('quotes.json')
+        self.quotes = quotes['quotes']
 
-        for cmd in self.commands:
+        for cmd in self.standard_commands:
             setattr(self, f'hakc{cmd}', 0)
 
-    async def HandleCommand(self, user, message, command):
-        cmd, CD = await self.StandardCommand(command)
+        for cmd in self.non_standard_commands:
+            setattr(self, f'hakc{cmd}', 0)
 
-        return cmd, CD
+    # async def HandleCommand(self, user, message, command, standard):
+    #     if (standard):
+    #         cmd, CD = await self.StandardCommand(command)
+    #     elif (not standard):
+    #         cmd, CD = await self.NonStandardCommand(command)
+
+    #     return cmd, CD
 
     async def StandardCommand(self, command):
-        name = self.commands[command]['cd_name']
-        message = self.commands[command]['message']
-        CD = self.commands[command]['cd_time']
+        name = self.standard_commands[command]['cd_name']
+        message = self.standard_commands[command]['message']
+        CD = self.standard_commands[command]['cd_time']
 
         if (command == 'uptime'):
             message = self.Hakcbot.uptime_message
@@ -46,3 +52,6 @@ class Commands:
         await self.Hakcbot.SendMessage(message)
 
         return name, CD
+
+    async def NonStandardCommand(self, command, arg):
+        pass
