@@ -40,7 +40,8 @@ class Spam:
 
             blocked_message = await self.url_filter(user, message)
 
-            return blocked_message, user, message
+            # returning message as a list to allow commands to be parsed
+            return blocked_message, user, message.split()
         except Exception:
             traceback.print_exc()
 
@@ -170,7 +171,7 @@ class Spam:
             tags = tags.split(';')
             user = msg[1].split('!')
 
-            message = msg[2].split()
+            message = msg[2]
 
             username = user[0]
             subscriber = tags[9]
