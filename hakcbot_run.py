@@ -91,7 +91,7 @@ class Run:
             timers.append(self.Commands.automated[cmd]['timer'])
 
         try:
-            await asyncio.gather(self.Automate.timeout, *[self.Automate.timers(cmds[t], timers[t]) for t in range(t_count)])
+            await asyncio.gather(*[self.Automate.timers(cmds[t], timers[t]) for t in range(t_count)])
         except Exception as E:
             print(f'AsyncIO General Error | {E}')
 
