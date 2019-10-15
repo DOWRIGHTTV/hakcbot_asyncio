@@ -68,9 +68,9 @@ class Threads:
         if (not error and 'day' not in account_age and 'week' not in account_age
                 and 'month' not in account_age and 'year' not in account_age):
             print(f'Flagging for timeout: {user.name}')
-            self.Hakcbot.Automate.flag_for_timeout.append(user)
+            self.Hakcbot.Automate.flag_for_timeout.append(user.name)
 
         elif (not error):
-            self.Hakcbot.Spam.account_age_whitelist.add(user)
+            self.Hakcbot.Spam.account_age_whitelist.add(user.name)
 
-        self.Hakcbot.Spam.account_age_check_inprogress.remove(user)
+        self.Hakcbot.Spam.account_age_check_inprogress.remove(user.name)

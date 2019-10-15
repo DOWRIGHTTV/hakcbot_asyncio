@@ -49,7 +49,7 @@ class Run:
         await self.Spam.adjust_blacklist()
         await self.Spam.adjust_whitelist()
 
-        await asyncio.gather(self.Hakc(), self.Hakc2())#, self.Automate.timeout())
+        await asyncio.gather(self.Hakc(), self.Hakc2())
 
     async def Hakc(self):
         loop = asyncio.get_running_loop()
@@ -72,7 +72,7 @@ class Run:
                         if (not blocked_message):
                             print(f'{user.name}: {message}')
 
-                            await self.Execute.parse_message(user, message)
+                            await self.Execute.parse_message(user, message.split())
                             self.linecount += 1
 
                     elif ('JOIN' in line):
