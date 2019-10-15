@@ -49,7 +49,7 @@ class Run:
         await self.Spam.adjust_blacklist()
         await self.Spam.adjust_whitelist()
 
-        await asyncio.gather(self.Hakc(), self.Hakc2())
+        await asyncio.gather(self.Hakc(), self.Hakc2())#, self.Automate.timeout())
 
     async def Hakc(self):
         loop = asyncio.get_running_loop()
@@ -91,7 +91,7 @@ class Run:
             timers.append(self.Commands.automated[cmd]['timer'])
 
         try:
-            await asyncio.gather(*[self.Automate.timers(cmds[t], timers[t]) for t in range(t_count)])
+            await asyncio.gather(self.Automate.timeout(), *[self.Automate.timers(cmds[t], timers[t]) for t in range(t_count)])
         except Exception as E:
             print(f'AsyncIO General Error | {E}')
 
