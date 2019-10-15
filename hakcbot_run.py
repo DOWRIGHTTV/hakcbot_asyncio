@@ -132,8 +132,8 @@ class Automate:
                 continue
 
             while self.flag_for_timeout:
-                user = self.flag_for_timeout.popleft()
-                message = f'/timeout {user} 3600 account age less than one day.'
+                username = self.flag_for_timeout.popleft()
+                message = f'/timeout {username} 3600 account age less than one day.'
 #            response = f'sorry {user}, accounts must be older than 1 day to talk in chat.'
 
                 await self.Hakcbot.send_message(message)
