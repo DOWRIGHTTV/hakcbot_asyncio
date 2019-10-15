@@ -24,15 +24,12 @@ class Execute:
         for word in message:
             word = word.lower().strip('\r')
             command = None
-            print(word)
             if ('(' in word and word.endswith(')')):
                 command = word.split('(')[0]
                 command_arg = word.split('(')[1].strip(')')
-                print(command, command_arg)
 
             if (command in self.Hakcbot.Commands.standard_commands
                     or command in self.Hakcbot.Commands.non_standard_commands):
-                print(command, command_arg)
                 cd_expire = getattr(self.Hakcbot.Commands, f'hakc{command}')
                 if (now > cd_expire or user in self.Hakcbot.mod_list):
                     if (not command_arg):

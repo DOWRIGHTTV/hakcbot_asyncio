@@ -59,13 +59,15 @@ class Threads:
         error = False
         # if there is a problem resolving or looking up the account age, the bot will auto allow
         try:
-            account_age = requests.get(f'https://decapi.me/twitch/accountage/{user}?precision=7')
+            account_age = requests.get(f'https://decapi.me/twitch/accountage/{user.name}?precision=7')
             account_age = account_age.text.strip('\n')
         except Exception:
             error = True
 
+        #5 years, 9 months, 2 weeks, 4 days, 13 hours, 7 minutes, 10 seconds
         if (not error and 'day' not in account_age and 'week' not in account_age
                 and 'month' not in account_age and 'year' not in account_age):
+            print(f'Flagging for timeout: {user.name}')
             self.Hakcbot.Automate.flag_for_timeout.append(user)
 
         elif (not error):
