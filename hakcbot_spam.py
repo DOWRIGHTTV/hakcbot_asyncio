@@ -35,8 +35,8 @@ class Spam:
 #            print(f'AA WL: {self.account_age_whitelist}')
             if (user not in self.account_age_whitelist
                     and user not in self.account_age_check_inprogress):
-                self.account_age_check_inprogress.add(user)
-                await self.add_to_accountage_queue(user)
+                self.account_age_check_inprogress.add(user.name)
+                await self.add_to_accountage_queue(user.name)
 
             blocked_message = await self.url_filter(user, message)
 
