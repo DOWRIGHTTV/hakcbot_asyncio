@@ -27,6 +27,7 @@ class Execute:
             if ('(' in word and word.endswith(')')):
                 command = word.split('(')[0]
                 command_arg = word.split('(')[1].strip(')')
+                print(command, command_arg)
 
             if (command in self.Hakcbot.Commands.standard_commands
                     or command in self.Hakcbot.Commands.non_standard_commands):
