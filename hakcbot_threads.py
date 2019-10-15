@@ -44,7 +44,7 @@ class Threads:
             time.sleep(90)
 
     def get_accountage_queue(self):
-        print('[+] Starting Uptime tracking thread.')
+        print('[+] Starting account age queue thread.')
         while True:
             if (not self.account_age_queue):
                 time.sleep(1)
