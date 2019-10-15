@@ -24,6 +24,7 @@ class Execute:
         for word in message:
             word = word.lower().strip('\r')
             command = None
+            print(word)
             if ('(' in word and word.endswith(')')):
                 command = word.split('(')[0]
                 command_arg = word.split('(')[1].strip(')')
