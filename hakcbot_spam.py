@@ -170,7 +170,7 @@ class Spam:
             tags = tags.split(';')
             user = msg[1].split('!')
 
-            message = msg[2]
+            message = msg[2].split()
 
             username = user[0]
             subscriber = tags[9]
