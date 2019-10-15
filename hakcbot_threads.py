@@ -14,11 +14,11 @@ class Threads:
         self.account_age_whitelist = set()
         self.account_age_queue = deque()
 
-    def Start(self):
-        threading.Thread(target=self.Uptime).start()
-        threading.Thread(target=self.AccountAgeQueue).start()
+    def start(self):
+        threading.Thread(target=self.uptime_thread).start()
+        threading.Thread(target=self.get_accountage_queue).start()
 
-    def Uptime(self):
+    def uptime_thread(self):
         print('[+] Starting Uptime tracking thread.')
         while True:
             error = False
@@ -43,7 +43,7 @@ class Threads:
 
             time.sleep(90)
 
-    def AccountAgeQueue(self):
+    def get_accountage_queue(self):
         print('[+] Starting Uptime tracking thread.')
         while True:
             if (not self.account_age_queue):
@@ -53,9 +53,9 @@ class Threads:
             while self.account_age_queue:
                 user = self.account_age_queue.popleft()
 
-                threading.Thread(target=self.CheckAccountAge, args=(user,)).start()
+                threading.Thread(target=self.get_accountage, args=(user,)).start()
 
-    def CheckAccountAge(self, user):
+    def get_accountage(self, user):
         error = False
         # if there is a problem resolving or looking up the account age, the bot will auto allow
         try:

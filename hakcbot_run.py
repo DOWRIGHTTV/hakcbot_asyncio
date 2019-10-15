@@ -35,19 +35,19 @@ class Run:
         roles = load_from_file('roles.json')
         self.mod_list = roles['user_roles']['mods']
 
-    def Start(self):
-        self.Threads.Start()
+    def start(self):
+        self.Threads.start()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        asyncio.run(self.Main())
+        asyncio.run(self.main())
 
-    async def Main(self):
-        await self.Hakcbot.Connect()
+    async def main(self):
+        await self.Hakcbot.connect()
 
-        await self.Spam.TLDSetCreate()
-        await self.Spam.BlacklistAdjust()
-        await self.Spam.WhitelistAdjust()
+        await self.Spam.create_tld_set()
+        await self.Spam.adjust_blacklist()
+        await self.Spam.adjust_whitelist()
 
         await asyncio.gather(self.Hakc(), self.Hakc2())
 
@@ -68,11 +68,11 @@ class Run:
                         await loop.sock_sendall(self.Hakcbot.sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
 
                     elif ('PRIVMSG' in line):
-                        blocked_message, user, message = await self.Spam.Main(line)
+                        blocked_message, user, message = await self.Spam.main(line)
                         if (not blocked_message):
                             print(f'{user.name}: {message}')
 
-                            await self.Execute.ParseMessage(user, message)
+                            await self.Execute.parse_message(user, message)
                             self.linecount += 1
 
                     elif ('JOIN' in line):
@@ -91,11 +91,11 @@ class Run:
             timers.append(self.Commands.automated[cmd]['timer'])
 
         try:
-            await asyncio.gather(*[self.Automate.Timers(cmds[t], timers[t]) for t in range(t_count)])
+            await asyncio.gather(self.Automate.timeout, [self.Automate.timers(cmds[t], timers[t]) for t in range(t_count)])
         except Exception as E:
             print(f'AsyncIO General Error | {E}')
 
-    async def SendMessage(self, message, response=None):
+    async def send_message(self, message, response=None):
         loop = asyncio.get_running_loop()
         print(f'hakcbot: {message}')
         message = f'PRIVMSG #{CHANNEL} :{message}'
@@ -111,7 +111,7 @@ class Automate:
 
         self.flag_for_timeout = deque()
 
-    async def Timers(self, cmd, timer):
+    async def timers(self, cmd, timer):
         try:
             message = self.Hakcbot.Commands.standard_commands[cmd]['message']
             while True:
@@ -119,13 +119,13 @@ class Automate:
                 print(f'Line Count: {self.Hakcbot.linecount}')
                 cooldown = getattr(self.Hakcbot.Commands, f'hakc{cmd}')
                 if (not cooldown and self.Hakcbot.linecount >= 3):
-                    await self.Hakcbot.SendMessage(message)
+                    await self.Hakcbot.send_message(message)
                 elif (cooldown):
                     print(f'hakcbot: {cmd} command on cooldown')
         except Exception as E:
             print(f'AsyncIO Timer Error: {E}')
 
-    async def AutomateTimeout(self):
+    async def timeout(self):
         while True:
             if (not self.flag_for_timeout):
                 await asyncio.sleep(1)
@@ -136,11 +136,11 @@ class Automate:
                 message = f'/timeout {user} 3600 account age less than one day.'
 #            response = f'sorry {user}, accounts must be older than 1 day to talk in chat.'
 
-                await self.Hakcbot.SendMessage(message)
+                await self.Hakcbot.send_message(message)
 
 def Main():
     Hakcbot = Run()
-    Hakcbot.Start()
+    Hakcbot.start()
 
 if __name__ == '__main__':
     try:

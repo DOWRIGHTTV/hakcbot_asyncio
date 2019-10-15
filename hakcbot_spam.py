@@ -27,36 +27,36 @@ class Spam:
         self.user_tuple = namedtuple('user', 'name mod sub vip permit')
 
     # Main method, creating a wrapper/ logic around other functional methods
-    async def Main(self, line):
+    async def main(self, line):
         try:
-            user, message = await self.FormatLine(line)
-            await self.HakcbotModComms(user, message)
+            user, message = await self.format_line(line)
+            await self.get_mod_command(user, message)
 
 #            print(f'AA WL: {self.account_age_whitelist}')
             if (user not in self.account_age_whitelist
                     and user not in self.account_age_check_inprogress):
                 self.account_age_check_inprogress.add(user)
-                await self.AddtoAccountAgeQueue(user)
+                await self.add_to_accountage_queue(user)
 
-            blocked_message = await self.URLFilter(user, message)
+            blocked_message = await self.url_filter(user, message)
 
             return blocked_message, user, message
         except Exception:
             traceback.print_exc()
 
-    async def AddtoAccountAgeQueue(self, user):
+    async def add_to_accountage_queue(self, user):
         self.Hakcbot.Threads.account_age_queue.append(user)
 
     # checkin message for url regex match, then checking whitelisted users and whitelisted urls,
     # if not whitelisted then checking urls for more specific url qualities like known TLDs
     # then timeing out user and notifying chat.
-    async def URLFilter(self, user, message):
+    async def url_filter(self, user, message):
         block_url = False
         url_match = re.findall(URL, message)
-        blacklisted_word = await self.CheckBlacklist(message)
+        blacklisted_word = await self.check_blacklist(message)
         if (not blacklisted_word and url_match and not user.mod
                 and not user.vip and not user.sub and not user.permit):
-            block_url, url_match = await self.URLCheck(url_match)
+            block_url, url_match = await self.validate_url(url_match)
 
 #        print(f'URL: {url_match} | BLOCK?: {block_url} | USER: {user}')
         if (blacklisted_word):
@@ -71,11 +71,11 @@ class Spam:
             print(f'BLOCKED || {user} : {url_match}') # want to see user tuple here
 
         if (blacklisted_word or block_url):
-            await self.Hakcbot.SendMessage(message, response)
+            await self.Hakcbot.send_message(message, response)
 
             return True
 
-    async def CheckBlacklist(self, message):
+    async def check_blacklist(self, message):
         for blacklisted_word in self.blacklist:
             if blacklisted_word in message:
                 return blacklisted_word
@@ -85,10 +85,10 @@ class Spam:
     # method to permit users to post urls for 3 minutes, untimeing out just in case they
     # where arlready timed out, only allowing chat mods to do the command
     # NOTE: INACTIVE
-    async def HakcbotModComms(self, user, message):
+    async def get_mod_command(self, user, message):
         if (user.mod):
             if ('permit(' in message):
-                valid_message = await self.ValidateCommand(message)
+                valid_message = await self.validate_command(message)
                 if (valid_message):
                     username = re.findall(PERMIT_USER, message)[0]
                     await self.HakcbotPermitThread(username.lower(), length=3)
@@ -96,18 +96,18 @@ class Spam:
                     message = f'/untimeout {username}'
                     response = f'{username} can post links for 3 minutes.'
 
-                    await self.Hakcbot.SendMessage(message, response)
+                    await self.Hakcbot.send_message(message, response)
 
             elif ('addwl(' in message):
                 action = True
                 url = re.findall(ADD_WL, message)[0]
 
-                await self.WhitelistAdjust(url, action)
+                await self.adjust_whitelist(url, action)
             elif('delwl(' in message):
                 action = False
                 url = re.findall(DEL_WL, message)[0]
 
-                await self.WhitelistAdjust(url, action)
+                await self.adjust_whitelist(url, action)
 
     # Thread to add user to whitelist set, then remove after 3 minutes.
     # NOTE: INACTIVE
@@ -118,7 +118,7 @@ class Spam:
 
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
     # triggering url/link filter
-    async def URLCheck(self, urlmatch):
+    async def validate_url(self, urlmatch):
         ## Checking all urls in urlmatch, if a match is found and it is not whitelisted or
         ## doesnt meet the other filter requirements then it will return True to mark the message
         ## to be blocked as well as the offending url. If no match, then will return False.
@@ -137,7 +137,7 @@ class Spam:
 
     ## Method to adjust URL whitelist on mod command, will call itself if list is updated
     ## to update running set white bot is running
-    async def WhitelistAdjust(self, url=None, action=None):
+    async def adjust_whitelist(self, url=None, action=None):
         whitelist = load_from_file('whitelist.json')
 
         write = False
@@ -154,14 +154,14 @@ class Spam:
 
         if (write):
             write_to_file(whitelist, 'whitelist.json')
-            await self.WhitelistAdjust()
+            await self.adjust_whitelist()
 
-    async def BlacklistAdjust(self, url=None, action=None):
+    async def adjust_blacklist(self, url=None, action=None):
         blacklist = load_from_file('blacklist.json')
         self.blacklist = blacklist['Blacklist']['Words']
 
     # Formatting/Parsing messages to be looked at for generally filter policies.
-    async def FormatLine(self, line):
+    async def format_line(self, line):
         mod, sub, vip, permit = False, False, False, False
         try:
             tags = re.findall(USER_TAGS, line)[0]
@@ -201,13 +201,13 @@ class Spam:
 
     # Initializing TLD set to reference for advanced url match || 0(1), so not performance hit
     # to check 1200+ entries
-    async def TLDSetCreate(self):
+    async def create_tld_set(self):
         with open('TLDs') as TLDs:
             for tld in TLDs:
                 if len(tld) <= 6:
                     self.domain_tlds.add(tld.strip('\n').lower())
 
-    async def ValidateCommand(self, message):
+    async def validate_command(self, message):
         if ('!' in message or '/' in message or '.' in message or ' ' in message):
             return False
         else:

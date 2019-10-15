@@ -36,7 +36,7 @@ class Commands:
 
     #     return cmd, CD
 
-    async def StandardCommand(self, command):
+    async def get_standard_command(self, command):
         name = self.standard_commands[command]['cd_name']
         message = self.standard_commands[command]['message']
         CD = self.standard_commands[command]['cd_time']
@@ -49,9 +49,9 @@ class Commands:
             ltime = time.strftime('%H:%M:%S', current_time)
             message = f'{message} {ltime}'
 
-        await self.Hakcbot.SendMessage(message)
+        await self.Hakcbot.send_message(message)
 
         return name, CD
 
-    async def NonStandardCommand(self, command, arg):
+    async def get_non_standard_command(self, command, arg):
         pass

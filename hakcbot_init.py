@@ -10,11 +10,11 @@ class Hakcbot:
         self.sock = socket()
         self.sock.setblocking(0)
 
-    async def Connect(self):
-        await self.openSocket()
-        await self.joinRoom()
+    async def connect(self):
+        await self.join_room()
+        await self.validate_connection()
 
-    async def openSocket(self):
+    async def join_room(self):
         loop = asyncio.get_running_loop()
 
         await loop.sock_connect(self.sock, (HOST, PORT))
@@ -24,7 +24,7 @@ class Hakcbot:
         await loop.sock_sendall(self.sock, f'JOIN #{CHANNEL}\r\n'.encode('utf-8'))
         await loop.sock_sendall(self.sock, f'CAP REQ :twitch.tv/tags\r\n'.encode('utf-8'))
 
-    async def joinRoom(self):
+    async def validate_connection(self):
         loop = asyncio.get_running_loop()
         recv_buffer = ''
         Loading = True
