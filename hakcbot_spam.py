@@ -31,7 +31,7 @@ class Spam:
             await self.get_mod_command(user, message)
 
             # function will check if already in progress before sending to the queue
-            await self.Hakcbot.AccountAge.add_to_accountage_queue(user)
+            await self.Hakcbot.AccountAge.add_to_queue(user)
 
             blocked_message = await self.url_filter(user, message)
 
@@ -67,6 +67,7 @@ class Spam:
 
             return True
 
+    # maybe flip this around or use regex to improve performance on large blacklists
     async def check_blacklist(self, message):
         for blacklisted_word in self.blacklist:
             if blacklisted_word in message:
@@ -76,14 +77,13 @@ class Spam:
 
     # method to permit users to post urls for 3 minutes, untimeing out just in case they
     # where arlready timed out, only allowing chat mods to do the command
-    # NOTE: INACTIVE
     async def get_mod_command(self, user, message):
         if (user.mod):
             if ('permit(' in message):
                 valid_message = await self.validate_command(message)
                 if (valid_message):
                     username = re.findall(PERMIT_USER, message)[0]
-                    await self.HakcbotPermitThread(username.lower(), length=3)
+                    await self.permit_link(username.lower(), length=3)
 
                     message = f'/untimeout {username}'
                     response = f'{username} can post links for 3 minutes.'
@@ -102,8 +102,7 @@ class Spam:
                 await self.adjust_whitelist(url, action)
 
     # Thread to add user to whitelist set, then remove after 3 minutes.
-    # NOTE: INACTIVE
-    async def HakcbotPermitThread(self, username, length=3):
+    async def permit_link(self, username, length=3):
         permit_duration = length * 60
         self.permit_list[username] = time.time() + permit_duration
         print(f'ADDED permit user: {username} | length: {length}')
