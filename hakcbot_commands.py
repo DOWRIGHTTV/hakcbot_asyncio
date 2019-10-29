@@ -51,9 +51,11 @@ class Commands:
         CD = self.non_standard_commands[command]['cd_time']
 
         if (command == 'quote'):
+            if arg not in self.quotes:
+                return None, None
+
             message = self.quotes[arg]
             message = f'{message[0]} - {CHANNEL} {message[1]}'
-
             await self.Hakcbot.send_message(message)
 
             return name, CD
