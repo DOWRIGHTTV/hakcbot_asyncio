@@ -30,7 +30,7 @@ class Spam:
             await self.get_mod_command(user, message)
 
             # function will check if already in progress before sending to the queue
-            await self.Hakcbot.Threads.add_to_accountage_queue(user.name)
+            await self.Hakcbot.Threads.add_to_accountage_queue(user)
 
             blocked_message = await self.url_filter(user, message)
 
