@@ -7,11 +7,12 @@ import requests
 import traceback
 import asyncio
 
-from hakcbot_utilities import load_from_file, write_to_file
+from collections import namedtuple
 
 from config import CHANNEL
 from regex import *
-from collections import namedtuple
+
+from hakcbot_utilities import load_from_file, write_to_file
 
 
 class Spam:
@@ -30,7 +31,7 @@ class Spam:
             await self.get_mod_command(user, message)
 
             # function will check if already in progress before sending to the queue
-            await self.Hakcbot.Threads.add_to_accountage_queue(user)
+            await self.Hakcbot.AccountAge.add_to_accountage_queue(user)
 
             blocked_message = await self.url_filter(user, message)
 
