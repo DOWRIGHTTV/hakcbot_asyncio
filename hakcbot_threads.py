@@ -18,6 +18,26 @@ class Threads:
         threading.Thread(target=self.uptime_thread).start()
         threading.Thread(target=self.get_accountage_queue).start()
 
+    @staticmethod
+    def account_age(function_to_wrap):
+        def wrapper(self, username, account_age_whitelist = set()):
+            if (username in account_age_whitelist):
+                print(f'adding {username} to account_age whitelist!')
+                return
+
+            timeout = function_to_wrap(username)
+            if (timeout is None):
+                pass
+            elif (timeout):
+                self.Hakcbot.Automate.flag_for_timeout.append(username)
+                print(f'{username} flagged for timeout due to < 1 day account age!')
+            else:
+                account_age_whitelist.add(username)
+
+            self.Hakcbot.Spam.account_age_check_inprogress.remove(username)
+
+            return wrapper
+
     # if there is a problem resolving or looking up the uptime, the bot will show an error message
     def uptime_thread(self):
         print('[+] Starting Uptime tracking thread.')
@@ -75,23 +95,3 @@ class Threads:
                 return True
 
         return False
-
-    @staticmethod
-    def account_age(function_to_wrap):
-        def wrapper(self, username, account_age_whitelist = set()):
-            if (username in account_age_whitelist):
-                print(f'adding {username} to account_age whitelist!')
-                return
-
-            timeout = function_to_wrap(username)
-            if (timeout is None):
-                pass
-            elif (timeout):
-                self.Hakcbot.Automate.flag_for_timeout.append(username)
-                print(f'{username} flagged for timeout due to < 1 day account age!')
-            else:
-                account_age_whitelist.add(username)
-
-            self.Hakcbot.Spam.account_age_check_inprogress.remove(username)
-
-            return wrapper
