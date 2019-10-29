@@ -12,7 +12,7 @@ from collections import deque
 from hakcbot_utilities import load_from_file
 
 from hakcbot_init import Hakcbot
-from hakcbot_threads import Threads
+from hakcbot_threads import AcountAge
 from hakcbot_execute import Execute
 from hakcbot_spam import Spam
 from hakcbot_commands import Commands
@@ -22,11 +22,11 @@ class Run:
     def __init__(self):
         self.Hakcbot = Hakcbot()
 
-        self.Threads = Threads(self)
         self.Automate = Automate(self)
         self.Execute = Execute(self)
         self.Spam = Spam(self)
         self.Commands = Commands(self)
+        self.AcountAge = AcountAge(self)
 
         self.linecount = 0
 
@@ -38,6 +38,7 @@ class Run:
 
     def start(self):
         threading.Thread(target=self.uptime_thread).start()
+        threading.Thread(target=self.AcountAge.start).start()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
