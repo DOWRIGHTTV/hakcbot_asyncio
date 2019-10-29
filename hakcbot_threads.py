@@ -80,6 +80,7 @@ class Threads:
     def account_age(function_to_wrap):
         def wrapper(self, username, account_age_whitelist = set()):
             if (username in account_age_whitelist):
+                print(f'adding {username} to account_age whitelist!')
                 return
 
             timeout = function_to_wrap(username)
@@ -87,6 +88,7 @@ class Threads:
                 pass
             elif (timeout):
                 self.Hakcbot.Automate.flag_for_timeout.append(username)
+                print(f'{username} flagged for timeout due to < 1 day account age!')
             else:
                 account_age_whitelist.add(username)
 
