@@ -21,9 +21,6 @@ class Spam:
         self.permit_list = {}
         self.url_whitelist = {}
 
-        self.account_age_check_inprogress = set()
-        self.account_age_whitelist = set()
-
         self.user_tuple = namedtuple('user', 'name mod sub vip permit')
 
     # Main method, creating a wrapper/ logic around other functional methods
@@ -32,20 +29,14 @@ class Spam:
             user, message = await self.format_line(line)
             await self.get_mod_command(user, message)
 
-#            print(f'AA WL: {self.account_age_whitelist}')
-            if (user.name not in self.account_age_whitelist
-                    and user.name not in self.account_age_check_inprogress):
-                self.account_age_check_inprogress.add(user.name)
-                await self.add_to_accountage_queue(user.name)
+            # function will check if already in progress before sending to the queue
+            await self.Hakcbot.Threads.add_to_accountage_queue(user.name)
 
             blocked_message = await self.url_filter(user, message)
 
             return blocked_message, user, message
         except Exception:
             traceback.print_exc()
-
-    async def add_to_accountage_queue(self, user):
-        self.Hakcbot.Threads.account_age_queue.append(user)
 
     # checkin message for url regex match, then checking whitelisted users and whitelisted urls,
     # if not whitelisted then checking urls for more specific url qualities like known TLDs

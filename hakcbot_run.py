@@ -37,7 +37,7 @@ class Run:
         self.mod_list = roles['user_roles']['mods']
 
     def start(self):
-        self.Threads.start()
+        threading.Thread(target=self.uptime_thread).start()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -106,6 +106,31 @@ class Run:
         if (response):
             response = f'PRIVMSG #{CHANNEL} :{response}'
             await loop.sock_sendall(self.Hakcbot.sock, f'{response}\r\n'.encode("utf-8"))
+
+    # if there is a problem resolving or looking up the uptime, the bot will show an error message
+    def uptime_thread(self):
+        print('[+] Starting Uptime tracking thread.')
+        while True:
+            error = False
+            try:
+                uptime = requests.get("https://decapi.me/twitch/uptime?channel={CHANNEL}")
+                uptime = uptime.text.strip('\n')
+            except Exception:
+                error = True
+
+            if (not error and uptime == 'dowright is offline'):
+                self.online = False
+                message = 'DOWRIGHT is OFFLINE'
+            elif (not error):
+                self.Hakcbot.online = True
+                message = self.Commands.standard_commands['uptime']['message']
+                message = f'{message} {uptime}'
+            else:
+                message = 'Hakcbot is currently being a dumb dumb. :/'
+
+            self.Hakcbot.uptime_message = message
+
+            time.sleep(90)
 
 class Automate:
     def __init__(self, Hakcbot):
