@@ -7,6 +7,7 @@ import asyncio
 import requests
 
 from regex import *
+from config import CHANNEL
 from hakcbot_utilities import load_from_file
 
 
