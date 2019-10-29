@@ -46,4 +46,15 @@ class Commands:
         return name, CD
 
     async def get_non_standard_command(self, command, arg):
+        name = self.standard_commands[command]['cd_name']
+        CD = self.standard_commands[command]['cd_time']
+
+        if (command == 'quote'):
+            message = self.quotes[arg]
+            message = f'{message[0]} ,{CHANNEL} {message[1]}'
+
+            await self.Hakcbot.send_message(message)
+
+            return name, CD
+
         return None, None
