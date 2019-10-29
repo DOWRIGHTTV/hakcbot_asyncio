@@ -36,7 +36,9 @@ class Execute:
                         command, CD = await self.Hakcbot.Commands.get_standard_command(command)
                     else:
                         command, CD = await self.Hakcbot.Commands.get_non_standard_command(command, command_arg)
-                    await self.command_cooldown(command, CD)
+
+                    if (CD):
+                        await self.command_cooldown(command, CD)
 
                     break
 
