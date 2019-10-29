@@ -38,7 +38,8 @@ class Run:
 
     def start(self):
         threading.Thread(target=self.uptime_thread).start()
-        threading.Thread(target=self.AccountAge.start).start()
+
+        self.AccountAge.start()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)

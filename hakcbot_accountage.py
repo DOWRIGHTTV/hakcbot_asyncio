@@ -27,14 +27,13 @@ class AccountAge:
         if (user not in self.aa_check_in_progress):
             self.aa_check_in_progress.add(user)
 
+            print(f'added {user.name} to acocount age queue!')
             self.account_age_queue.append(user)
 
     def account_age(function_to_wrap):
-        def wrapper(self, user, account_age_whitelist = set()):
-            if (user.sub or user.vip):
-                return
-            elif (user.name in account_age_whitelist):
-                print(f'adding {user.name} to account_age whitelist!')
+        def wrapper(self, user, account_age_whitelist=set()):
+            if (user.sub or user.vip or
+                    user.name in account_age_whitelist):
                 return
 
             timeout = function_to_wrap(self, user.name)
@@ -44,6 +43,7 @@ class AccountAge:
                 self.Hakcbot.Automate.flag_for_timeout.append(user.name)
                 print(f'{user.name} flagged for timeout due to < 1 day account age!')
             else:
+                print(f'adding {user.name} to account_age whitelist!')
                 account_age_whitelist.add(user.name)
 
             self.aa_check_in_progress.remove(user.name)

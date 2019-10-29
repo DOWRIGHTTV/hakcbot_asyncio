@@ -7,6 +7,7 @@ import requests
 import traceback
 import asyncio
 
+from ipaddress import IPv4Address
 from collections import namedtuple
 
 from config import CHANNEL
@@ -43,12 +44,13 @@ class Spam:
     # if not whitelisted then checking urls for more specific url qualities like known TLDs
     # then timeing out user and notifying chat.
     async def url_filter(self, user, message):
-        block_url = False
+        block_link = False
         url_match = re.findall(URL, message)
         blacklisted_word = await self.check_blacklist(message)
-        if (not blacklisted_word and url_match and not user.mod
-                and not user.vip and not user.sub and not user.permit):
-            block_url, url_match = await self.validate_url(url_match)
+        if (not blacklisted_word and url_match and not user.permit):
+            block_link, url_match = await self.check_for_link(url_match)
+            if (not block_link):
+                block_link, url_match = await self.check_for_ipaddress(url_match)
 
 #        print(f'URL: {url_match} | BLOCK?: {block_url} | USER: {user}')
         if (blacklisted_word):
@@ -56,13 +58,13 @@ class Spam:
             response = f'{user.name}, you are a bad boi and used a blacklisted word.'
 
             print(f'BLOCKED || {user} : {blacklisted_word}') # want to see user tuple here
-        elif (block_url):
+        elif (block_link):
             message = f'/timeout {user.name} {10} {url_match}'
             response = f'{user.name}, ask for permission to post links.'
 
             print(f'BLOCKED || {user} : {url_match}') # want to see user tuple here
 
-        if (blacklisted_word or block_url):
+        if (blacklisted_word or block_link):
             await self.Hakcbot.send_message(message, response)
 
             return True
@@ -107,24 +109,27 @@ class Spam:
         self.permit_list[username] = time.time() + permit_duration
         print(f'ADDED permit user: {username} | length: {length}')
 
+    # checking if any regex match (link/url match) if an ip address.
+    async def check_for_ipaddress(self, urlmatch):
+        for match in urlmatch:
+            try:
+                ip_address = IPv4Address(match)
+                if (ip_address):
+                    return True, ip_address
+            except ValueError:
+                pass
+
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
     # triggering url/link filter
-    async def validate_url(self, urlmatch):
-        ## Checking all urls in urlmatch, if a match is found and it is not whitelisted or
-        ## doesnt meet the other filter requirements then it will return True to mark the message
-        ## to be blocked as well as the offending url. If no match, then will return False.
-        numbers = ['-', '0', '1','2','3','4','5','6','7','8','9']
+    async def check_for_link(self, urlmatch):
         for match in urlmatch:
             match = match.strip('/')
-            tld = match.split('.')[-1].strip('/')
-            if (match not in self.url_whitelist):
-                for number in numbers:
-                    if number in match:
-                        return True, match
-                if tld in self.domain_tlds:
-                    return True, match
-        else:
-            return False, None
+            tld = match.split('.')[-1]
+            if (match not in self.url_whitelist
+                    and tld in self.domain_tlds):
+                return True, match
+
+        return False, None
 
     ## Method to adjust URL whitelist on mod command, will call itself if list is updated
     ## to update running set white bot is running
@@ -174,15 +179,18 @@ class Spam:
             if ('vip/1' in badges):
                 vip = True
 
-            now = time.time()
-            permit_link_expire = self.permit_list.get(username, None)
-            if (permit_link_expire):
-                # marking user to be permitted for a link head of time
-                if (now < permit_link_expire):
-                    permit = True
-                # if expiration detected, will remove user from dict. temporary until better cleaning solution is implemented
-                else:
-                    self.permit_list.pop(username)
+            if mod or vip or subscriber:
+                permit = True
+            else:
+                now = time.time()
+                permit_link_expire = self.permit_list.get(username, None)
+                if (permit_link_expire):
+                    # marking user to be permitted for a link head of time
+                    if (now < permit_link_expire):
+                        permit = True
+                    # if expiration detected, will remove user from dict. temporary until better cleaning solution is implemented
+                    else:
+                        self.permit_list.pop(username)
 
             user = self.user_tuple(username, mod, sub, vip, permit)
 
@@ -195,7 +203,7 @@ class Spam:
     async def create_tld_set(self):
         with open('TLDs') as TLDs:
             for tld in TLDs:
-                if len(tld) <= 6:
+                if (len(tld) <= 6 and not tld.beginswith('#')):
                     self.domain_tlds.add(tld.strip('\n').lower())
 
     async def validate_command(self, message):

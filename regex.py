@@ -21,7 +21,8 @@ DEL_WL = re.compile(r'delwl\((.*?)\)')
 
 PERMIT_USER = re.compile(r'permit\((.*?)\)')
 URL = re.compile(
-r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z]{2,}\.?)|' # Domain
-r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # IP Address
-r'(?::\d+)?' # Optional Port eg :8080
-r'(?:/?|[/?]\S+)', re.IGNORECASE) # Sepcific pages in url eg /homepage
+    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z]{2,}\.?)|' # Domain
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # IP Address
+    r'(?::\d+)?' # Optional Port eg :8080
+    r'(?:/?|[/?]\S+)',
+    re.IGNORECASE) # Sepcific pages in url eg /homepage

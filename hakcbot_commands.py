@@ -28,14 +28,6 @@ class Commands:
         for cmd in self.non_standard_commands:
             setattr(self, f'hakc{cmd}', 0)
 
-    # async def HandleCommand(self, user, message, command, standard):
-    #     if (standard):
-    #         cmd, CD = await self.StandardCommand(command)
-    #     elif (not standard):
-    #         cmd, CD = await self.NonStandardCommand(command)
-
-    #     return cmd, CD
-
     async def get_standard_command(self, command):
         name = self.standard_commands[command]['cd_name']
         message = self.standard_commands[command]['message']
