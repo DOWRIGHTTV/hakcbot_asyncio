@@ -52,7 +52,7 @@ class Commands:
 
         if (command == 'quote'):
             message = self.quotes[arg]
-            message = f'{message[0]} ,{CHANNEL} {message[1]}'
+            message = f'{message[0]} - {CHANNEL} {message[1]}'
 
             await self.Hakcbot.send_message(message)
 
