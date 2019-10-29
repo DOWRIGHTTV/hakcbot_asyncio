@@ -12,7 +12,7 @@ from collections import deque
 from hakcbot_utilities import load_from_file
 
 from hakcbot_init import Hakcbot
-from hakcbot_threads import AcountAge
+from hakcbot_accountage import AccountAge
 from hakcbot_execute import Execute
 from hakcbot_spam import Spam
 from hakcbot_commands import Commands
@@ -26,7 +26,7 @@ class Run:
         self.Execute = Execute(self)
         self.Spam = Spam(self)
         self.Commands = Commands(self)
-        self.AcountAge = AcountAge(self)
+        self.AccountAge = AccountAge(self)
 
         self.linecount = 0
 

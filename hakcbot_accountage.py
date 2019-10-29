@@ -7,7 +7,7 @@ import threading
 from collections import deque
 
 
-class AcountAge:
+class AccountAge:
     ''' this class is to check the account age of all users sending messages in the twitch/irc chat. this class is a standard
     queue, but once the user gets checked it will be added to a whitelist to prevent subsequent checks until the bot is restart.
     adding to the queue will done as a async function to be compatible with the main bot code, but the class itself will be
