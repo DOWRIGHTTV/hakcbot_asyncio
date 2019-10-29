@@ -4,6 +4,7 @@ import time
 import requests
 import threading
 
+from config import *
 from collections import deque
 
 
@@ -11,20 +12,19 @@ class Threads:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-        self.account_age_whitelist = set()
         self.account_age_queue = deque()
 
     def start(self):
         threading.Thread(target=self.uptime_thread).start()
         threading.Thread(target=self.get_accountage_queue).start()
 
+    # if there is a problem resolving or looking up the uptime, the bot will show an error message
     def uptime_thread(self):
         print('[+] Starting Uptime tracking thread.')
         while True:
             error = False
-            # if there is a problem resolving or looking up the uptime, the bot will show an error message
             try:
-                uptime = requests.get("https://decapi.me/twitch/uptime?channel=dowright")
+                uptime = requests.get("https://decapi.me/twitch/uptime?channel={CHANNEL}")
                 uptime = uptime.text.strip('\n')
             except Exception:
                 error = True
@@ -55,22 +55,41 @@ class Threads:
 
                 threading.Thread(target=self.get_accountage, args=(user,)).start()
 
+    # return True will mark for timeout, False will add to whitelist, None will check on next message due to errors
+    @account_age
     def get_accountage(self, username):
-        error = False
-        # if there is a problem resolving or looking up the account age, the bot will auto allow
+        validate_date = {'years': None, 'months': None, 'weeks': None, 'days': None}
         try:
             account_age = requests.get(f'https://decapi.me/twitch/accountage/{username}?precision=7')
             account_age = account_age.text.strip('\n')
         except Exception:
-            error = True
+            return None
 
-        #5 years, 9 months, 2 weeks, 4 days, 13 hours, 7 minutes, 10 seconds
-        if (not error and 'day' not in account_age and 'week' not in account_age
-                and 'month' not in account_age and 'year' not in account_age):
-            print(f'Flagging for timeout: {username}')
-            self.Hakcbot.Automate.flag_for_timeout.append(username)
+        account_age = account_age.split(',')
+        for time in account_age:
+            number, name = time.strip().split()
+            validate_date.update({name: number})
 
-        elif (not error):
-            self.Hakcbot.Spam.account_age_whitelist.add(username)
+        for length in validate_date:
+            if (not length):
+                return True
 
-        self.Hakcbot.Spam.account_age_check_inprogress.remove(username)
+        return False
+
+    @staticmethod
+    def account_age(function_to_wrap):
+        def wrapper(self, username, account_age_whitelist = set()):
+            if (username in account_age_whitelist):
+                return
+
+            timeout = function_to_wrap(username)
+            if (timeout is None):
+                pass
+            elif (timeout):
+                self.Hakcbot.Automate.flag_for_timeout.append(username)
+            else:
+                account_age_whitelist.add(username)
+
+            self.Hakcbot.Spam.account_age_check_inprogress.remove(username)
+
+            return wrapper

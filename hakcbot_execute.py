@@ -40,8 +40,6 @@ class Execute:
 
                     break
 
-            command = word.split('(')
-
     async def command_cooldown(self, command, CD):
         cd_expire = time.time() + CD
 

@@ -17,6 +17,7 @@ from hakcbot_execute import Execute
 from hakcbot_spam import Spam
 from hakcbot_commands import Commands
 
+
 class Run:
     def __init__(self):
         self.Hakcbot = Hakcbot()
@@ -49,9 +50,9 @@ class Run:
         await self.Spam.adjust_blacklist()
         await self.Spam.adjust_whitelist()
 
-        await asyncio.gather(self.Hakc(), self.Hakc2())
+        await asyncio.gather(self.hakc_general(), self.hakc_automation())
 
-    async def Hakc(self):
+    async def hakc_general(self):
         loop = asyncio.get_running_loop()
         recv_buffer =  ''
         try:
@@ -63,8 +64,6 @@ class Run:
 
                 for line in chat:
                     if ('PING :tmi.twitch.tv\r' == line):
-                        print(line)
-                        self.linecount = 0
                         await loop.sock_sendall(self.Hakcbot.sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
 
                     elif ('PRIVMSG' in line):
@@ -82,7 +81,7 @@ class Run:
             traceback.print_exc()
             print(f'Main Process Error: {E}')
 
-    async def Hakc2(self):
+    async def hakc_automation(self):
         cmds = []
         timers = []
 
@@ -91,7 +90,10 @@ class Run:
             timers.append(self.Commands.automated[cmd]['timer'])
 
         try:
-            await asyncio.gather(self.Automate.timeout(), *[self.Automate.timers(cmds[t], timers[t]) for t in range(t_count)])
+            await asyncio.gather(
+                self.Automate.reset_line_count(), self.Automate.timeout(),
+                *[self.Automate.timers(cmds[t], timers[t]) for t in range(t_count)])
+
         except Exception as E:
             print(f'AsyncIO General Error | {E}')
 
@@ -111,12 +113,16 @@ class Automate:
 
         self.flag_for_timeout = deque()
 
+    async def reset_line_count(self):
+        while True:
+            await asyncio.sleep(60 * 5)
+            self.Hakcbot.linecount = 0
+
     async def timers(self, cmd, timer):
         try:
             message = self.Hakcbot.Commands.standard_commands[cmd]['message']
             while True:
                 await asyncio.sleep(60 * timer)
-                print(f'Line Count: {self.Hakcbot.linecount}')
                 cooldown = getattr(self.Hakcbot.Commands, f'hakc{cmd}')
                 if (not cooldown and self.Hakcbot.linecount >= 3):
                     await self.Hakcbot.send_message(message)

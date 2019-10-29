@@ -5,6 +5,7 @@ import asyncio
 from socket import *
 from config import *
 
+
 class Hakcbot:
     def __init__(self):
         self.sock = socket()
