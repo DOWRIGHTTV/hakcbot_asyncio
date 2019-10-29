@@ -54,4 +54,4 @@ class Commands:
         return name, CD
 
     async def get_non_standard_command(self, command, arg):
-        pass
+        return None, None
