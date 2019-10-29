@@ -203,7 +203,7 @@ class Spam:
     async def create_tld_set(self):
         with open('TLDs') as TLDs:
             for tld in TLDs:
-                if (len(tld) <= 6 and not tld.beginswith('#')):
+                if (len(tld) <= 6 and not tld.startswith('#')):
                     self.domain_tlds.add(tld.strip('\n').lower())
 
     async def validate_command(self, message):
