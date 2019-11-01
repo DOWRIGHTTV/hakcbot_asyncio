@@ -179,7 +179,7 @@ class Spam:
             if ('vip/1' in badges):
                 vip = True
 
-            if mod or vip or subscriber:
+            if mod or vip or sub:
                 permit = True
             else:
                 now = time.time()

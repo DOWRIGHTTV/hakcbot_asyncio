@@ -34,9 +34,12 @@ class AccountAge:
         def wrapper(self, user, account_age_whitelist=set()):
             if (user.sub or user.vip or
                     user.name in account_age_whitelist):
+                print(f'user {user.name} whitelisted. returning.')
                 return
 
+            print('calling function to check user')
             timeout = function_to_wrap(self, user.name)
+            print(f'user {user.name} checked. timeout: {timeout}')
             if (timeout is None):
                 pass
             elif (timeout):
@@ -59,7 +62,6 @@ class AccountAge:
 
             while self.account_age_queue:
                 user = self.account_age_queue.popleft()
-                print(f'processing {user} from queue')
 
                 threading.Thread(target=self.get_accountage, args=(user,)).start()
 
