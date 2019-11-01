@@ -32,15 +32,11 @@ class AccountAge:
 
     def account_age(function_to_wrap):
         def wrapper(self, user, account_age_whitelist=set()):
-            print(f'processing {user} | whitelist {account_age_whitelist}')
             if (user.sub or user.vip or
                     user.name in account_age_whitelist):
-                print(f'user {user.name} whitelisted. returning.')
                 return
 
-            print('calling function to check user')
             timeout = function_to_wrap(self, user.name)
-            print(f'user {user.name} checked. timeout: {timeout}')
             if (timeout is None):
                 pass
             elif (timeout):
@@ -70,7 +66,6 @@ class AccountAge:
     @account_age
     def get_accountage(self, username):
         validate_date = {'years': None, 'months': None, 'weeks': None, 'days': None}
-        print(f'checking account age for user: {username}')
         try:
             account_age = requests.get(f'https://decapi.me/twitch/accountage/{username}?precision=7')
             account_age = account_age.text.strip('\n')
