@@ -31,6 +31,7 @@ class AccountAge:
             self.account_age_queue.append(user)
 
     def account_age(function_to_wrap):
+        print('BUILT DECORATOR')
         def wrapper(self, user, account_age_whitelist=set()):
             print(f'processing {user} | whitelist {account_age_whitelist}')
             if (user.sub or user.vip or
