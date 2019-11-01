@@ -24,8 +24,8 @@ class AccountAge:
         threading.Thread(target=self.handle_queue).start()
 
     async def add_to_queue(self, user):
-        if (user not in self.aa_check_in_progress):
-            self.aa_check_in_progress.add(user)
+        if (user.name not in self.aa_check_in_progress):
+            self.aa_check_in_progress.add(user.name)
 
             print(f'added {user.name} to acocount age queue!')
             self.account_age_queue.append(user)
@@ -66,6 +66,7 @@ class AccountAge:
     @account_age
     def get_accountage(self, username):
         validate_date = {'years': None, 'months': None, 'weeks': None, 'days': None}
+        print(f'checking account age for user: {username}')
         try:
             account_age = requests.get(f'https://decapi.me/twitch/accountage/{username}?precision=7')
             account_age = account_age.text.strip('\n')
