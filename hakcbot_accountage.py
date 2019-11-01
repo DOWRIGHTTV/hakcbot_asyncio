@@ -59,6 +59,7 @@ class AccountAge:
 
             while self.account_age_queue:
                 user = self.account_age_queue.popleft()
+                print(f'processing {user} from queue')
 
                 threading.Thread(target=self.get_accountage, args=(user,)).start()
 
