@@ -24,8 +24,8 @@ class AccountAge:
         threading.Thread(target=self.handle_queue).start()
 
     async def add_to_queue(self, user):
-        if (user not in self.aa_check_in_progress):
-            self.aa_check_in_progress.add(user)
+        if (user.name not in self.aa_check_in_progress):
+            self.aa_check_in_progress.add(user.name)
 
             print(f'added {user.name} to acocount age queue!')
             self.account_age_queue.append(user)
@@ -48,7 +48,7 @@ class AccountAge:
 
             self.aa_check_in_progress.remove(user.name)
 
-            return wrapper
+        return wrapper
 
     def handle_queue(self):
         print('[+] Starting account age queue thread.')
