@@ -115,7 +115,7 @@ class Run:
         while True:
             error = False
             try:
-                uptime = requests.get("https://decapi.me/twitch/uptime?channel={CHANNEL}")
+                uptime = requests.get(f'https://decapi.me/twitch/uptime?channel={CHANNEL}')
                 uptime = uptime.text.strip('\n')
             except Exception:
                 error = True
@@ -124,13 +124,13 @@ class Run:
                 self.online = False
                 message = 'DOWRIGHT is OFFLINE'
             elif (not error):
-                self.Hakcbot.online = True
+                self.online = True
                 message = self.Commands.standard_commands['uptime']['message']
                 message = f'{message} {uptime}'
             else:
                 message = 'Hakcbot is currently being a dumb dumb. :/'
 
-            self.Hakcbot.uptime_message = message
+            self.uptime_message = message
 
             time.sleep(90)
 
