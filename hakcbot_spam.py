@@ -48,9 +48,9 @@ class Spam:
         url_match = re.findall(URL, message)
         blacklisted_word = await self.check_blacklist(message)
         if (not blacklisted_word and url_match and not user.permit):
-            block_link, url_match = await self.check_for_link(url_match)
+            block_link, blocked_url = await self.check_for_link(url_match)
             if (not block_link):
-                block_link, url_match = await self.check_for_ipaddress(url_match)
+                block_link, blocked_url = await self.check_for_ipaddress(url_match)
 
 #        print(f'URL: {url_match} | BLOCK?: {block_url} | USER: {user}')
         if (blacklisted_word):
@@ -62,7 +62,7 @@ class Spam:
             message = f'/timeout {user.name} {10} {url_match}'
             response = f'{user.name}, ask for permission to post links.'
 
-            print(f'BLOCKED || {user} : {url_match}') # want to see user tuple here
+            print(f'BLOCKED || {user} : {blocked_url}') # want to see user tuple here
 
         if (blacklisted_word or block_link):
             await self.Hakcbot.send_message(message, response)
