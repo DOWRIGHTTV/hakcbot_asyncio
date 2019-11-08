@@ -31,7 +31,7 @@ class Run:
         self.linecount = 0
 
         self.online = False
-        self.uptime_message = 'DOWRIGHT is OFFLINE.'
+        self.uptime_message = 'hakbot is still initializing! try again in a bit.'
 
         roles = load_from_file('roles.json')
         self.mod_list = roles['user_roles']['mods']
