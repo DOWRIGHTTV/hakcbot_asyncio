@@ -35,7 +35,7 @@ class Spam:
             await self.Hakcbot.AccountAge.add_to_queue(user)
 
             blocked_message = await self.url_filter(user, message)
-
+            
             return blocked_message, user, message
         except Exception:
             traceback.print_exc()
@@ -118,6 +118,8 @@ class Spam:
                     return True, ip_address
             except ValueError:
                 pass
+                
+        return False, None
 
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
     # triggering url/link filter
