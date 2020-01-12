@@ -10,6 +10,7 @@ import asyncio
 from ipaddress import IPv4Address
 from collections import namedtuple
 
+# pylint: disable=no-name-in-module, unused-wildcard-import
 from config import CHANNEL
 from regex import *
 
@@ -35,7 +36,7 @@ class Spam:
             await self.Hakcbot.AccountAge.add_to_queue(user)
 
             blocked_message = await self.url_filter(user, message)
-            
+
             return blocked_message, user, message
         except Exception:
             traceback.print_exc()
@@ -49,8 +50,6 @@ class Spam:
         blacklisted_word = await self.check_blacklist(message)
         if (not blacklisted_word and url_match and not user.permit):
             block_link, blocked_url = await self.check_for_link(url_match)
-            if (not block_link):
-                block_link, blocked_url = await self.check_for_ipaddress(url_match)
 
 #        print(f'URL: {url_match} | BLOCK?: {block_url} | USER: {user}')
         if (blacklisted_word):
@@ -109,26 +108,14 @@ class Spam:
         self.permit_list[username] = time.time() + permit_duration
         print(f'ADDED permit user: {username} | length: {length}')
 
-    # checking if any regex match (link/url match) if an ip address.
-    async def check_for_ipaddress(self, urlmatch):
-        for match in urlmatch:
-            try:
-                ip_address = IPv4Address(match)
-                if (ip_address):
-                    return True, ip_address
-            except ValueError:
-                pass
-                
-        return False, None
-
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
     # triggering url/link filter
     async def check_for_link(self, urlmatch):
         for match in urlmatch:
             match = match.strip('/')
             tld = match.split('.')[-1]
-            if (match not in self.url_whitelist
-                    and tld in self.domain_tlds):
+            if (match not in self.url_whitelist and tld in self.domain_tlds):
+                match = ', '.join(match)
                 return True, match
 
         return False, None

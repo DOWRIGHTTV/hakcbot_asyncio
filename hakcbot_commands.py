@@ -6,6 +6,7 @@ import time
 import asyncio
 import requests
 
+# pylint: disable=no-name-in-module, unused-wildcard-import
 from regex import *
 from config import CHANNEL
 from hakcbot_utilities import load_from_file
@@ -30,6 +31,7 @@ class Commands:
             setattr(self, f'hakc{cmd}', 0)
 
     async def get_standard_command(self, command):
+
         name = self.standard_commands[command]['cd_name']
         message = self.standard_commands[command]['message']
         CD = self.standard_commands[command]['cd_time']
@@ -47,8 +49,11 @@ class Commands:
         return name, CD
 
     async def get_non_standard_command(self, command, arg):
-        name = self.non_standard_commands[command]['cd_name']
-        CD = self.non_standard_commands[command]['cd_time']
+        try:
+            name = self.non_standard_commands[command]['cd_name']
+            CD = self.non_standard_commands[command]['cd_time']
+        except KeyError:
+            return None, None
 
         if (command == 'quote'):
             if arg not in self.quotes:

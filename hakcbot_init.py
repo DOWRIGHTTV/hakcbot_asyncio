@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 
 import asyncio
+from socket import socket
 
-from socket import *
+# pylint: disable=unused-wildcard-import
 from config import *
 
 
@@ -15,6 +16,7 @@ class Hakcbot:
         await self.join_room()
         await self.validate_connection()
 
+    # pylint: disable=undefined-variable
     async def join_room(self):
         loop = asyncio.get_running_loop()
 

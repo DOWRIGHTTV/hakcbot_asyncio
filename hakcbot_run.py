@@ -99,6 +99,7 @@ class Run:
         except Exception as E:
             print(f'AsyncIO General Error | {E}')
 
+    # pylint: disable=undefined-variable
     async def send_message(self, message, response=None):
         loop = asyncio.get_running_loop()
         print(f'hakcbot: {message}')

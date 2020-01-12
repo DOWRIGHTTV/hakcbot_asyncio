@@ -30,6 +30,7 @@ class AccountAge:
             print(f'added {user.name} to acocount age queue!')
             self.account_age_queue.append(user)
 
+    # pylint: disable=no-self-argument, not-callable
     def account_age(function_to_wrap):
         def wrapper(self, user, account_age_whitelist=set()):
             if (user.sub or user.vip or
