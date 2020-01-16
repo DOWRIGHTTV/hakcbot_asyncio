@@ -27,7 +27,7 @@ class AccountAge:
         if (user.name not in self.aa_check_in_progress):
             self.aa_check_in_progress.add(user.name)
 
-            print(f'added {user.name} to acocount age queue!')
+            print(f'added {user.name} to account age queue!')
             self.account_age_queue.append(user)
 
     # pylint: disable=no-self-argument, not-callable
@@ -76,10 +76,11 @@ class AccountAge:
         account_age = account_age.split(',')
         for time in account_age:
             number, name = time.strip().split()
-            validate_date.update({name: number})
+            if name in validate_date:
+                validate_date[name] = number
 
-        for length in validate_date:
-            if (not length):
-                return True
-
-        return False
+        for _, amount in validate_date.items():
+            if (amount):
+                return False
+        else:
+            return True

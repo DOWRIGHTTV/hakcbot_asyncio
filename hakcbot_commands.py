@@ -31,10 +31,12 @@ class Commands:
             setattr(self, f'hakc{cmd}', 0)
 
     async def get_standard_command(self, command):
-
-        name = self.standard_commands[command]['cd_name']
-        message = self.standard_commands[command]['message']
-        CD = self.standard_commands[command]['cd_time']
+        try:
+            name = self.standard_commands[command]['cd_name']
+            message = self.standard_commands[command]['message']
+            CD = self.standard_commands[command]['cd_time']
+        except KeyError:
+            return None, None
 
         if (command == 'uptime'):
             message = self.Hakcbot.uptime_message
