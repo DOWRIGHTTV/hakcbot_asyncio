@@ -12,9 +12,10 @@ from collections import namedtuple
 
 # pylint: disable=no-name-in-module, unused-wildcard-import
 from config import CHANNEL
-from regex import *
-
+from hakcbot_regex import *
 from hakcbot_utilities import load_from_file, write_to_file
+
+BROADCASTER = 'dowright'
 
 
 class Spam:
@@ -58,7 +59,7 @@ class Spam:
 
             print(f'BLOCKED || {user} : {blacklisted_word}') # want to see user tuple here
         elif (block_link):
-            message = f'/timeout {user.name} {10} {url_match}'
+            message = f'/timeout {user.name} {10} {blocked_url}'
             response = f'{user.name}, ask for permission to post links.'
 
             print(f'BLOCKED || {user} : {blocked_url}') # want to see user tuple here
@@ -71,7 +72,7 @@ class Spam:
     # maybe flip this around or use regex to improve performance on large blacklists
     async def check_blacklist(self, message):
         for blacklisted_word in self.blacklist:
-            if blacklisted_word in message:
+            if (blacklisted_word in message):
                 return blacklisted_word
 
         return None
@@ -79,33 +80,38 @@ class Spam:
     # method to permit users to post urls for 3 minutes, untimeing out just in case they
     # where arlready timed out, only allowing chat mods to do the command
     async def get_mod_command(self, user, message):
-        if (user.mod):
-            if ('permit(' in message):
-                valid_message = await self.validate_command(message)
-                if (valid_message):
-                    username = re.findall(PERMIT_USER, message)[0]
-                    await self.permit_link(username.lower(), length=3)
+        if (not user.mod and user.name != BROADCASTER):
+            return
+        valid_message = await self.validate_command(message)
+        if (not valid_message):
+            return
 
-                    message = f'/untimeout {username}'
-                    response = f'{username} can post links for 3 minutes.'
+        if ('permit(' in message):
+            username = re.findall(PERMIT_USER, message)[0]
+            await self.permit_link(username.lower(), length=3)
 
-                    await self.Hakcbot.send_message(message, response)
+            message = f'/untimeout {username}'
+            response = f'{username} can post links for 3 minutes.'
 
-            elif ('addwl(' in message):
-                action = True
-                url = re.findall(ADD_WL, message)[0]
+        elif ('addwl(' in message):
+            action = True
+            url = re.findall(ADD_WL, message)[0]
+            message = f'adding {url} to the whitelist.'
+            await self.adjust_whitelist(url, action)
 
-                await self.adjust_whitelist(url, action)
-            elif('delwl(' in message):
-                action = False
-                url = re.findall(DEL_WL, message)[0]
+        elif('delwl(' in message):
+            action = False
+            url = re.findall(DEL_WL, message)[0]
+            message = f'removing {url} from the whitelist.'
+            await self.adjust_whitelist(url, action)
+        else:
+            return
 
-                await self.adjust_whitelist(url, action)
+        await self.Hakcbot.send_message(message, response)
 
-    # Thread to add user to whitelist set, then remove after 3 minutes.
+    # add user to whitelist set
     async def permit_link(self, username, length=3):
-        permit_duration = length * 60
-        self.permit_list[username] = time.time() + permit_duration
+        self.permit_list[username] = time.time() + (length * 60)
         print(f'ADDED permit user: {username} | length: {length}')
 
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
@@ -115,7 +121,7 @@ class Spam:
             match = match.strip('/')
             tld = match.split('.')[-1]
             if (match not in self.url_whitelist and tld in self.domain_tlds):
-                match = ', '.join(match)
+                match = ', '.join(urlmatch)
                 return True, match
 
         return False, None
@@ -123,27 +129,26 @@ class Spam:
     ## Method to adjust URL whitelist on mod command, will call itself if list is updated
     ## to update running set white bot is running
     async def adjust_whitelist(self, url=None, action=None):
-        whitelist = load_from_file('whitelist.json')
+        config = load_from_file('config.json')
 
-        write = False
-        self.url_whitelist = whitelist['Whitelist']['URLS']
-        if (url and action):
-            if (action is True):
-                self.url_whitelist.update({url: '1'})
-                print(f'hakcbot: added {url} to whitelist')
-                write = True
-            elif action is False:
-                self.url_whitelist.pop(url, None)
-                print(f'hakcbot: removed {url} from whitelist')
-                write = True
+        self.url_whitelist = config['whitelist']
+        if (not url or not action):
+            return
 
-        if (write):
-            write_to_file(whitelist, 'whitelist.json')
-            await self.adjust_whitelist()
+        if (action is True):
+            self.url_whitelist.update({url: '1'})
+            print(f'hakcbot: added {url} to whitelist')
+
+        elif action is False:
+            self.url_whitelist.pop(url, None)
+            print(f'hakcbot: removed {url} from whitelist')
+
+        write_to_file(config, 'config.json')
+        await self.adjust_whitelist()
 
     async def adjust_blacklist(self, url=None, action=None):
-        blacklist = load_from_file('blacklist.json')
-        self.blacklist = blacklist['Blacklist']['Words']
+        config = load_from_file('config.json')
+        self.blacklist = config['blacklist']
 
     # Formatting/Parsing messages to be looked at for generally filter policies.
     async def format_line(self, line):
@@ -155,37 +160,37 @@ class Spam:
             tags = tags.split(';')
             user = msg[1].split('!')
 
-            message = msg[2]
-
             username = user[0]
+            message = msg[2]
             subscriber = tags[9]
+            moderator = int(tags[7].split('=')[1])
             badges = tags[1]
-
-            if (username in self.Hakcbot.mod_list):
-                mod = True
-            if (subscriber == 'subscriber=1'):
-                sub = True
-            if ('vip/1' in badges):
-                vip = True
-
-            if mod or vip or sub:
-                permit = True
-            else:
-                now = time.time()
-                permit_link_expire = self.permit_list.get(username, None)
-                if (permit_link_expire):
-                    # marking user to be permitted for a link head of time
-                    if (now < permit_link_expire):
-                        permit = True
-                    # if expiration detected, will remove user from dict. temporary until better cleaning solution is implemented
-                    else:
-                        self.permit_list.pop(username)
-
-            user = self.user_tuple(username, mod, sub, vip, permit)
-
-            return user, message
         except Exception:
             raise Exception('Spam Format Line Error')
+
+        if (moderator):
+            mod = True
+        if (subscriber == 'subscriber=1'):
+            sub = True
+        if ('vip/1' in badges):
+            vip = True
+
+        # permitting the following roles to post links.
+        if (mod or vip or sub):
+            permit = True
+        else:
+            permit_link_expire = self.permit_list.get(username, None)
+            if (permit_link_expire):
+                # marking user to be permitted for a link head of time
+                if (time.time() < permit_link_expire):
+                    permit = True
+                # if expiration detected, will remove user from dict. temporary until better cleaning solution is implemented
+                else:
+                    self.permit_list.pop(username)
+
+        user = self.user_tuple(username, mod, sub, vip, permit)
+
+        return user, message
 
     # Initializing TLD set to reference for advanced url match || 0(1), so not performance hit
     # to check 1200+ entries

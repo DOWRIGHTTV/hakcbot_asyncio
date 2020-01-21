@@ -7,7 +7,7 @@ import asyncio
 import requests
 
 # pylint: disable=no-name-in-module, unused-wildcard-import
-from regex import *
+from hakcbot_regex import *
 from config import CHANNEL
 from hakcbot_utilities import load_from_file
 
@@ -16,13 +16,11 @@ class Commands:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-        commands = load_from_file('commands.json')
-        self.standard_commands = commands['standard']
-        self.non_standard_commands = commands['non_standard']
-        self.automated = commands['automated']
-
-        quotes = load_from_file('quotes.json')
-        self.quotes = quotes['quotes']
+        config = load_from_file('config.json')
+        self.standard_commands = config['commands']['standard']
+        self.non_standard_commands = config['commands']['non_standard']
+        self.automated = config['commands']['automated']
+        self.quotes = config['quotes']
 
         for cmd in self.standard_commands:
             setattr(self, f'hakc{cmd}', 0)

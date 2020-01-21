@@ -33,9 +33,6 @@ class Run:
         self.online = False
         self.uptime_message = 'hakbot is still initializing! try again in a bit.'
 
-        roles = load_from_file('roles.json')
-        self.mod_list = roles['user_roles']['mods']
-
     def start(self):
         threading.Thread(target=self.uptime_thread).start()
 

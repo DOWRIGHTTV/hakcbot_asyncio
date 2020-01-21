@@ -30,27 +30,6 @@ class AccountAge:
             print(f'added {user.name} to account age queue!')
             self.account_age_queue.append(user)
 
-    # pylint: disable=no-self-argument, not-callable
-    def account_age(function_to_wrap):
-        def wrapper(self, user, account_age_whitelist=set()):
-            if (user.sub or user.vip or
-                    user.name in account_age_whitelist):
-                return
-
-            timeout = function_to_wrap(self, user.name)
-            if (timeout is None):
-                pass
-            elif (timeout):
-                self.Hakcbot.Automate.flag_for_timeout.append(user.name)
-                print(f'{user.name} flagged for timeout due to < 1 day account age!')
-            else:
-                print(f'adding {user.name} to account_age whitelist!')
-                account_age_whitelist.add(user.name)
-
-            self.aa_check_in_progress.remove(user.name)
-
-        return wrapper
-
     def handle_queue(self):
         print('[+] Starting account age queue thread.')
         while True:
@@ -58,10 +37,30 @@ class AccountAge:
                 time.sleep(1)
                 continue
 
-            while self.account_age_queue:
-                user = self.account_age_queue.popleft()
+            user = self.account_age_queue.popleft()
+            threading.Thread(target=self.get_accountage, args=(user,)).start()
 
-                threading.Thread(target=self.get_accountage, args=(user,)).start()
+    # pylint: disable=no-self-argument, not-callable
+    def account_age(function_to_wrap):
+        def wrapper(self, user, account_age_whitelist=set()):
+            if (user.sub or user.vip or
+                    user.name in account_age_whitelist):
+                return
+
+            timeout, vd, aa = function_to_wrap(self, user.name)
+            if (timeout is None):
+                pass
+            elif (timeout):
+                self.Hakcbot.Automate.flag_for_timeout.append(user.name)
+                print(f'{user.name} flagged for timeout due to < 1 day account age!')
+                print(f'{user.name} >> {vd} | {aa}')
+            else:
+                print(f'adding {user.name} to account_age whitelist!')
+                account_age_whitelist.add(user.name)
+
+            self.aa_check_in_progress.remove(user.name)
+
+        return wrapper
 
     # return True will mark for timeout, False will add to whitelist, None will check on next message due to errors
     @account_age
@@ -71,7 +70,7 @@ class AccountAge:
             account_age = requests.get(f'https://decapi.me/twitch/accountage/{username}?precision=7')
             account_age = account_age.text.strip('\n')
         except Exception:
-            return None
+            return None, validate_date, account_age
 
         account_age = account_age.split(',')
         for time in account_age:
@@ -81,6 +80,6 @@ class AccountAge:
 
         for _, amount in validate_date.items():
             if (amount):
-                return False
+                return False, validate_date, account_age
         else:
-            return True
+            return True, validate_date, account_age

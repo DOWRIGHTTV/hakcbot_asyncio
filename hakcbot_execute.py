@@ -10,7 +10,7 @@ import json
 import traceback
 
 from config import *
-from regex import *
+from hakcbot_regex import *
 from datetime import datetime
 
 class Execute:
