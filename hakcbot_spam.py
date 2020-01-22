@@ -11,11 +11,9 @@ from ipaddress import IPv4Address
 from collections import namedtuple
 
 # pylint: disable=no-name-in-module, unused-wildcard-import
-from config import CHANNEL
+from config import CHANNEL, BROADCASTER
 from hakcbot_regex import *
 from hakcbot_utilities import load_from_file, write_to_file
-
-BROADCASTER = 'dowright'
 
 
 class Spam:
@@ -31,6 +29,10 @@ class Spam:
     async def main(self, line):
         try:
             user, message = await self.format_line(line)
+            # if error bot will process next message and print error to prevent bot from crashing.
+            if (not user):
+                return
+
             await self.get_mod_command(user, message)
 
             # function will check if already in progress before sending to the queue
@@ -152,32 +154,26 @@ class Spam:
 
     # Formatting/Parsing messages to be looked at for generally filter policies.
     async def format_line(self, line):
-        mod, sub, vip, permit = False, False, False, False
         try:
             tags = re.findall(USER_TAGS, line)[0]
-            msg = re.findall(MESSAGE, line)[0]
-            msg = msg.split(':', 2)
+            msg  = re.findall(MESSAGE, line)[0]
+            msg  = msg.split(':', 2)
             tags = tags.split(';')
             user = msg[1].split('!')
 
             username = user[0]
-            message = msg[2]
-            subscriber = tags[9]
-            moderator = int(tags[7].split('=')[1])
-            badges = tags[1]
-        except Exception:
-            raise Exception('Spam Format Line Error')
+            message  = msg[2]
 
-        if (moderator):
-            mod = True
-        if (subscriber == 'subscriber=1'):
-            sub = True
-        if ('vip/1' in badges):
-            vip = True
+            subscriber = bool([x for x in re.findall(SUBSCRIBER, tags) if x == '1'])
+            vip        = bool([x for x in re.findall(VIP, tags) if x == '1'])
+            moderator  = bool([x for x in re.findall(MOD, tags) if x == '1'])
 
-        # permitting the following roles to post links.
-        if (mod or vip or sub):
-            permit = True
+            # permitting the following roles to post links.
+            permit = bool(subscriber or vip or moderator)
+        except Exception as E:
+            print(f'Parse Error: {E}')
+            return None, None
+
         else:
             permit_link_expire = self.permit_list.get(username, None)
             if (permit_link_expire):
@@ -188,9 +184,7 @@ class Spam:
                 else:
                     self.permit_list.pop(username)
 
-        user = self.user_tuple(username, mod, sub, vip, permit)
-
-        return user, message
+        return self.user_tuple(username, subscriber, vip, moderator, permit), message
 
     # Initializing TLD set to reference for advanced url match || 0(1), so not performance hit
     # to check 1200+ entries

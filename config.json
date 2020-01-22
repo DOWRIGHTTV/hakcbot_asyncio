@@ -65,6 +65,11 @@
                 "message": "i dont like mozilla (cuz DOH) and google is wack so i use brave. check it out here: https://brave.com/dow336",
                 "cd_name": "hakcbrave",
                 "cd_time": 60
+            },
+            "doh": {
+                "message": "WATCH THIS. its about DNS over HTTPS. https://youtube.com/watch?v=8SJorQUfm8",
+                "cd_name": "hakcdoh",
+                "cd_type": 60
             }
         },
         "non_standard": {

@@ -2,6 +2,11 @@
 
 import re
 
+
+SUBSCRIBER = re.compile(r'subscriber=(.*?);')
+VIP = re.compile(r'vip/(.*?);')
+MOD = re.compile(r'mod=(.*?);')
+
 YOUR_MOM = re.compile(r'yourmom\((.*?)\)')
 YOUR_MUM = re.compile(r'yourmum\((.*?)\)')
 FLAG = re.compile(r'flag\((.*?)\)')
