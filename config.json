@@ -70,6 +70,11 @@
                 "message": "WATCH THIS. its about DNS over HTTPS. https://youtube.com/watch?v=8SJorQUfm8",
                 "cd_name": "hakcdoh",
                 "cd_type": 60
+            },
+            "vscodium": {
+                "message": "IDE is vscodium with solarized dark theme. see here: https://vscodium.com/",
+                "cd_name": "hakcvscodium",
+                "cd_type": 60
             }
         },
         "non_standard": {

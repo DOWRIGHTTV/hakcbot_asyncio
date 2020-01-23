@@ -31,7 +31,7 @@ class Spam:
             user, message = await self.format_line(line)
             # if error bot will process next message and print error to prevent bot from crashing.
             if (not user):
-                return
+                return None, None, None
 
             await self.get_mod_command(user, message)
 
@@ -41,8 +41,9 @@ class Spam:
             blocked_message = await self.url_filter(user, message)
 
             return blocked_message, user, message
-        except Exception:
-            traceback.print_exc()
+        except Exception as E:
+            print(f'SPAM MAIN: {E}')
+            return None, None, None
 
     # checkin message for url regex match, then checking whitelisted users and whitelisted urls,
     # if not whitelisted then checking urls for more specific url qualities like known TLDs
@@ -171,8 +172,7 @@ class Spam:
             # permitting the following roles to post links.
             permit = bool(subscriber or vip or moderator)
         except Exception as E:
-            print(f'Parse Error: {E}')
-            return None, None
+            raise Exception(f'Parse Error: {E}')
 
         else:
             permit_link_expire = self.permit_list.get(username, None)

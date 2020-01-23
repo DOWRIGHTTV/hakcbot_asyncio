@@ -67,7 +67,7 @@ class Run:
 
                     elif ('PRIVMSG' in line):
                         blocked_message, user, message = await self.Spam.main(line)
-                        if (not blocked_message):
+                        if (not blocked_message and user):
                             print(f'{user.name}: {message}')
 
                             await self.Execute.parse_message(user, message.split())
