@@ -157,12 +157,9 @@ class Spam:
     async def format_line(self, line):
         try:
             tags = re.findall(USER_TAGS, line)[0]
-            msg  = re.findall(MESSAGE, line)[0]
-            msg  = msg.split(':', 2)
-            tags = tags.split(';')
-            user = msg[1].split('!')
+            msg  = re.findall(MESSAGE, line)[0].split(':', 2)
 
-            username = user[0]
+            username = msg[1].split('!')[0]
             message  = msg[2]
 
             subscriber = bool([x for x in re.findall(SUBSCRIBER, tags) if x == '1'])
