@@ -67,7 +67,7 @@
                 "cd_time": 60
             },
             "doh": {
-                "message": "WATCH THIS. its about DNS over HTTPS. https://youtube.com/watch?v=8SJorQUfm8",
+                "message": "WATCH THIS. its about DNS over HTTPS. https://youtube.com/watch?v=8SJorQ9Ufm8",
                 "cd_name": "hakcdoh",
                 "cd_time": 60
             },
@@ -123,16 +123,21 @@
         "pastebin.com" : 1,
         "twitch.tv": 1,
         "github.com": 1,
-        "automatetheboringstuff.com": 1
+        "automatetheboringstuff.com": 1,
+        "hastebin.com": 1
     },
     "quotes": {
         "1": [
             "im just a boy and his dog",
-            "2019"
+            2019
         ],
         "2": [
             "fuckkkkkkkkk",
             2019
+        ],
+        "3": [
+            "your shit is all fucked up... and i mean that in the nicest way possible",
+            2020
         ]
     }
 }

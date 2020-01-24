@@ -65,7 +65,13 @@ class AccountAge:
     # return True will mark for timeout, False will add to whitelist, None will check on next message due to errors
     @account_age
     def get_accountage(self, username):
-        validate_date = {'years': None, 'months': None, 'weeks': None, 'days': None}
+        validate_date = {
+            'year' : None, 'years' : None,
+            'month': None, 'months': None,
+            'week' : None, 'weeks' : None,
+            'day'  : None, 'days'  : None
+            }
+
         try:
             account_age = requests.get(f'https://decapi.me/twitch/accountage/{username}?precision=7')
             account_age = account_age.text.strip('\n')
@@ -75,10 +81,10 @@ class AccountAge:
         account_age = account_age.split(',')
         for time in account_age:
             number, name = time.strip().split()
-            if name in validate_date:
+            if (name in validate_date):
                 validate_date[name] = number
 
-        for _, amount in validate_date.items():
+        for amount in validate_date.values():
             if (amount):
                 return False, validate_date, account_age
         else:
