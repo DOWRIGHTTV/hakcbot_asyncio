@@ -18,12 +18,12 @@ from hakcbot_utilities import load_from_file, write_to_file
 
 class Spam:
     def __init__(self, Hakcbot):
-        self.Hakcbot = Hakcbot
-        self.domain_tlds = set()
-        self.permit_list = {}
+        self.Hakcbot       = Hakcbot
+        self.domain_tlds   = set()
+        self.permit_list   = {}
         self.url_whitelist = {}
-
-        self.user_tuple = namedtuple('user', 'name mod sub vip permit')
+        self.aa_whitelist  = set()
+        self.user_tuple    = namedtuple('user', 'name mod sub vip permit')
 
     # Main method, creating a wrapper/ logic around other functional methods
     async def main(self, line):
@@ -57,12 +57,12 @@ class Spam:
 
 #        print(f'URL: {url_match} | BLOCK?: {block_url} | USER: {user}')
         if (blacklisted_word):
-            message = f'/timeout {user.name} {10} {blacklisted_word}'
+            message  = f'/timeout {user.name} {10} {blacklisted_word}'
             response = f'{user.name}, you are a bad boi and used a blacklisted word.'
 
             print(f'BLOCKED || {user} : {blacklisted_word}') # want to see user tuple here
         elif (block_link):
-            message = f'/timeout {user.name} {10} {blocked_url}'
+            message  = f'/timeout {user.name} {10} {blocked_url}'
             response = f'{user.name}, ask for permission to post links.'
 
             print(f'BLOCKED || {user} : {blocked_url}') # want to see user tuple here
@@ -72,16 +72,13 @@ class Spam:
 
             return True
 
-    # maybe flip this around or use regex to improve performance on large blacklists
     async def check_blacklist(self, message):
-        for blacklisted_word in self.blacklist:
-            if (blacklisted_word in message):
-                return blacklisted_word
+        for word in message:
+            if (word in self.blacklist):
+                return word
 
         return None
 
-    # method to permit users to post urls for 3 minutes, untimeing out just in case they
-    # where arlready timed out, only allowing chat mods to do the command
     async def get_mod_command(self, user, message):
         if (not user.mod and user.name != BROADCASTER):
             return
@@ -89,23 +86,26 @@ class Spam:
         if (not valid_message):
             return
 
-        if ('permit(' in message):
+        if re.findall(PERMIT_USER, message):
             username = re.findall(PERMIT_USER, message)[0]
-            await self.permit_link(username.lower(), length=3)
+            await self.permit_link(username, length=3)
 
-            message = f'/untimeout {username}'
+            message  = f'/untimeout {username}'
             response = f'{username} can post links for 3 minutes.'
 
-        elif ('addwl(' in message):
-            action = True
-            url = re.findall(ADD_WL, message)[0]
-            message = f'adding {url} to the whitelist.'
+        elif re.findall(AA_WL, message):
+            username = re.findall(AA_WL, message)[0]
+            message  = f'adding {username} to the account age whitelist.'
+            await self.add_to_aa_whitelist(username)
+
+        elif re.findall(ADD_WL, message):
+            action, url = True, re.findall(ADD_WL, message)[0]
+            message     = f'adding {url} to the whitelist.'
             await self.adjust_whitelist(url, action)
 
-        elif('delwl(' in message):
-            action = False
-            url = re.findall(DEL_WL, message)[0]
-            message = f'removing {url} from the whitelist.'
+        elif re.findall(DEL_WL, message):
+            action, url = False, re.findall(DEL_WL, message)[0]
+            message     = f'removing {url} from the whitelist.'
             await self.adjust_whitelist(url, action)
         else:
             return
@@ -114,8 +114,12 @@ class Spam:
 
     # add user to whitelist set
     async def permit_link(self, username, length=3):
-        self.permit_list[username] = time.time() + (length * 60)
-        print(f'ADDED permit user: {username} | length: {length}')
+        self.permit_list[username.lower()] = time.time() + (length * 60)
+        print(f'ADDED permit for user: {username} | length: {length}')
+
+    async def add_to_aa_whitelist(self, username):
+        self.aa_whitelist.add(username.lower())
+        print(f'ADDED AA WL for user: {username}')
 
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
     # triggering url/link filter
@@ -132,6 +136,7 @@ class Spam:
     ## Method to adjust URL whitelist on mod command, will call itself if list is updated
     ## to update running set white bot is running
     async def adjust_whitelist(self, url=None, action=None):
+        loop   = asyncio.get_running_loop()
         config = load_from_file('config.json')
 
         self.url_whitelist = config['whitelist']
@@ -139,19 +144,19 @@ class Spam:
             return
 
         if (action is True):
-            self.url_whitelist.update({url: '1'})
+            self.url_whitelist.append(url.lower())
             print(f'hakcbot: added {url} to whitelist')
 
-        elif action is False:
-            self.url_whitelist.pop(url, None)
+        elif (action is False):
+            self.url_whitelist.pop(url.lower(), None)
             print(f'hakcbot: removed {url} from whitelist')
 
-        write_to_file(config, 'config.json')
+        await loop.run_in_executor(None, write_to_file, config, 'config.json')
         await self.adjust_whitelist()
 
     async def adjust_blacklist(self, url=None, action=None):
         config = load_from_file('config.json')
-        self.blacklist = config['blacklist']
+        self.blacklist = set(config['blacklist'])
 
     # Formatting/Parsing messages to be looked at for generally filter policies.
     async def format_line(self, line):

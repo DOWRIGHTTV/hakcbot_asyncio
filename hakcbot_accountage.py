@@ -13,11 +13,10 @@ class AccountAge:
     adding to the queue will done as a async function to be compatible with the main bot code, but the class itself will be
     utiliting threads to achieve concurrent processing.
     '''
-
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-        self.account_age_queue = deque()
+        self.account_age_queue    = deque()
         self.aa_check_in_progress = set()
 
     def start(self):
@@ -43,8 +42,8 @@ class AccountAge:
     # pylint: disable=no-self-argument, not-callable
     def account_age(function_to_wrap):
         def wrapper(self, user, account_age_whitelist=set()):
-            if (user.sub or user.vip or
-                    user.name in account_age_whitelist):
+            if (user.sub or user.vip or user.name in account_age_whitelist
+                    or user.name in self.Hakcbot.Spam.aa_whitelist):
                 return
 
             timeout, vd, aa = function_to_wrap(self, user.name)

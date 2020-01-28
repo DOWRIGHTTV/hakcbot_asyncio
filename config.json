@@ -113,19 +113,19 @@
             }
         }
     },
-    "blacklist": {
-        "kingdombattles": 1,
-        "kingdom battles": 1
-    },
-    "whitelist": {
-        "docs.python.org": 1,
-        "python.org": 1,
-        "pastebin.com" : 1,
-        "twitch.tv": 1,
-        "github.com": 1,
-        "automatetheboringstuff.com": 1,
-        "hastebin.com": 1
-    },
+    "blacklist": [
+        "kingdombattles",
+        "kingdom battles"
+    ],
+    "whitelist": [
+        "docs.python.org",
+        "python.org",
+        "pastebin.com",
+        "twitch.tv",
+        "github.com",
+        "automatetheboringstuff.com",
+        "hastebin.com"
+    ],
     "quotes": {
         "1": [
             "im just a boy and his dog",

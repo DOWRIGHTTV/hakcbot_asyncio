@@ -21,8 +21,9 @@ GIVE_STATUS = re.compile(r'status\((.*?)\)')
 USER_TAGS = re.compile(r'@badge-info=(.*?)user-type=')
 MESSAGE = re.compile(r'user-type=(.*)')
 
-ADD_WL = re.compile(r'addwl\((.*?)\)')
-DEL_WL = re.compile(r'delwl\((.*?)\)')
+AA_WL = re.compile(r'aa_wl\((.*?)\)')
+ADD_WL = re.compile(r'add_wl\((.*?)\)')
+DEL_WL = re.compile(r'del_wl\((.*?)\)')
 
 PERMIT_USER = re.compile(r'permit\((.*?)\)')
 URL = re.compile(
