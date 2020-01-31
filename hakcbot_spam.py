@@ -86,6 +86,7 @@ class Spam:
         if (not valid_message):
             return
 
+        response = None
         if re.findall(PERMIT_USER, message):
             username = re.findall(PERMIT_USER, message)[0]
             await self.permit_link(username, length=3)
@@ -94,6 +95,7 @@ class Spam:
             response = f'{username} can post links for 3 minutes.'
 
         elif re.findall(AA_WL, message):
+            print('matched aa whitelist')
             username = re.findall(AA_WL, message)[0]
             message  = f'adding {username} to the account age whitelist.'
             await self.add_to_aa_whitelist(username)
@@ -120,6 +122,7 @@ class Spam:
     async def add_to_aa_whitelist(self, username):
         self.aa_whitelist.add(username.lower())
         print(f'ADDED AA WL for user: {username}')
+        print(f'AA WHISTELIST: {self.aa_whitelist}')
 
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
     # triggering url/link filter
