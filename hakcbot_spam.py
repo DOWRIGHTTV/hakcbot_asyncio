@@ -122,7 +122,6 @@ class Spam:
     async def add_to_aa_whitelist(self, username):
         self.aa_whitelist.add(username.lower())
         print(f'ADDED AA WL for user: {username}')
-        print(f'AA WHISTELIST: {self.aa_whitelist}')
 
     # More advanced checks for urls and ip addresses, to limit programming language in chat from
     # triggering url/link filter

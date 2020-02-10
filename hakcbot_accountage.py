@@ -51,8 +51,7 @@ class AccountAge:
                 pass
             elif (timeout):
                 self.Hakcbot.Automate.flag_for_timeout.append(user.name)
-                print(f'{user.name} flagged for timeout due to < 1 day account age!')
-                print(f'{user.name} >> {vd} | {aa}')
+                print(f'AA timeout | {user.name} >> {vd} | {aa}')
             else:
                 print(f'adding {user.name} to account_age whitelist!')
                 account_age_whitelist.add(user.name)

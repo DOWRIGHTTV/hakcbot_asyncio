@@ -137,6 +137,7 @@ class Automate:
         self.Hakcbot = Hakcbot
 
         self.flag_for_timeout = deque()
+        self.thread_message_queue = deque()
 
     async def reset_line_count(self):
         while True:
@@ -165,16 +166,19 @@ class Automate:
             while self.flag_for_timeout:
                 username = self.flag_for_timeout.popleft()
                 message = f'/timeout {username} 3600 account age less than one day.'
-#            response = f'sorry {user}, accounts must be older than 1 day to talk in chat.'
+                response = f'{username}, you have been timed out for having an account age \
+                    less that one day old. this is to prevent bot spam. if you are a human \
+                    (i can tell from first message), i will remove the timeout when i see it, \
+                    sorry!'
 
-                await self.Hakcbot.send_message(message)
+                await self.Hakcbot.send_message(message, response)
 
-def Main():
+def main():
     Hakcbot = Run()
     Hakcbot.start()
 
 if __name__ == '__main__':
     try:
-        Main()
+        main()
     except KeyboardInterrupt:
         print('Exiting Hakcbot :(')
