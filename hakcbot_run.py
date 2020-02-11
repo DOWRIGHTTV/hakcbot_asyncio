@@ -67,11 +67,12 @@ class Run:
 
                     elif ('PRIVMSG' in line):
                         blocked_message, user, message = await self.Spam.main(line)
-                        if (not blocked_message and user):
-                            print(f'{user.name}: {message}')
+                        if (blocked_message or not user):
+                            continue
 
-                            await self.Execute.parse_message(user, message.split())
-                            self.linecount += 1
+                        print(f'{user.name}: {message}')
+                        await self.Execute.parse_message(user, message.split())
+                        self.linecount += 1
 
                     elif ('JOIN' in line):
                         pass

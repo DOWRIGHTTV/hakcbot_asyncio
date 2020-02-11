@@ -17,10 +17,10 @@ class Commands:
         self.Hakcbot = Hakcbot
 
         config = load_from_file('config.json')
-        self.standard_commands = config['commands']['standard']
+        self.standard_commands     = config['commands']['standard']
         self.non_standard_commands = config['commands']['non_standard']
-        self.automated = config['commands']['automated']
-        self.quotes = config['quotes']
+        self.automated             = config['commands']['automated']
+        self.quotes                = config['quotes']
 
         for cmd in self.standard_commands:
             setattr(self, f'hakc{cmd}', 0)
@@ -30,9 +30,9 @@ class Commands:
 
     async def get_standard_command(self, command):
         try:
-            name = self.standard_commands[command]['cd_name']
             message = self.standard_commands[command]['message']
-            CD = self.standard_commands[command]['cd_time']
+            cd_name = self.standard_commands[command]['cd_name']
+            cd_time = self.standard_commands[command]['cd_time']
         except KeyError:
             return None, None
 
@@ -46,23 +46,32 @@ class Commands:
 
         await self.Hakcbot.send_message(message)
 
-        return name, CD
+        return cd_name, cd_time
 
-    async def get_non_standard_command(self, command, arg):
+    async def get_non_standard_command(self, command, arg, username):
         try:
-            name = self.non_standard_commands[command]['cd_name']
-            CD = self.non_standard_commands[command]['cd_time']
+            message = self.non_standard_commands[command]['message']
+            cd_name = self.non_standard_commands[command]['cd_name']
+            cd_time = self.non_standard_commands[command]['cd_time']
         except KeyError:
             return None, None
 
         if (command == 'quote'):
-            if arg not in self.quotes:
+            if (arg not in self.quotes):
                 return None, None
 
             message = self.quotes[arg]
             message = f'{message[0]} - {CHANNEL} {message[1]}'
             await self.Hakcbot.send_message(message)
 
-            return name, CD
+        elif (command in ['yourmom', 'yourmum']):
+            message = f"{username}'s {message}"
+            await self.Hakcbot.send_message(message)
 
-        return None, None
+        elif (command == 'praise'):
+            if (arg == 'thesun'):
+                message += ' (thesun)'
+            else:
+                message += f' ({username})'
+
+        return cd_name, cd_time

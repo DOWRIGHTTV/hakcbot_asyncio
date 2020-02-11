@@ -23,7 +23,7 @@ class Spam:
         self.permit_list   = {}
         self.url_whitelist = {}
         self.aa_whitelist  = set()
-        self.user_tuple    = namedtuple('user', 'name mod sub vip permit')
+        self.user_tuple    = namedtuple('user', 'name mod sub vip permit timestamp')
 
     # Main method, creating a wrapper/ logic around other functional methods
     async def main(self, line):
@@ -95,9 +95,9 @@ class Spam:
             response = f'{username} can post links for 3 minutes.'
 
         elif re.findall(AA_WL, message):
-            print('matched aa whitelist')
             username = re.findall(AA_WL, message)[0]
-            message  = f'adding {username} to the account age whitelist.'
+            message  = f'/untimeout {username}'
+            response  = f'adding {username} to the account age whitelist.'
             await self.add_to_aa_whitelist(username)
 
         elif re.findall(ADD_WL, message):
@@ -175,6 +175,8 @@ class Spam:
 
             # permitting the following roles to post links.
             permit = bool(subscriber or vip or moderator)
+
+            timestamp = round(time.time())
         except Exception as E:
             raise Exception(f'Parse Error: {E}')
 
@@ -188,7 +190,7 @@ class Spam:
                 else:
                     self.permit_list.pop(username)
 
-        return self.user_tuple(username, subscriber, vip, moderator, permit), message
+        return self.user_tuple(username, subscriber, vip, moderator, permit, timestamp), message
 
     # Initializing TLD set to reference for advanced url match || 0(1), so not performance hit
     # to check 1200+ entries

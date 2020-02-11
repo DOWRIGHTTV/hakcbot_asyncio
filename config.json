@@ -79,6 +79,7 @@
         },
         "non_standard": {
             "quote": {
+                "message": null,
                 "cd_name": "hakcquote",
                 "cd_time": 60
             },
@@ -136,7 +137,7 @@
             2019
         ],
         "3": [
-            "your shit is all fucked up... and i mean that in the nicest way possible",
+            "your shit is all fucked up... and i mean that in the best way possible",
             2020
         ]
     }
