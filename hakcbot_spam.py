@@ -87,25 +87,25 @@ class Spam:
             return
 
         response = None
-        if re.findall(PERMIT_USER, message):
+        if re.findall(PERMIT_USER, message)[0]:
             username = re.findall(PERMIT_USER, message)[0]
             await self.permit_link(username, length=3)
 
             message  = f'/untimeout {username}'
             response = f'{username} can post links for 3 minutes.'
 
-        elif re.findall(AA_WL, message):
+        elif re.findall(AA_WL, message)[0]:
             username = re.findall(AA_WL, message)[0]
             message  = f'/untimeout {username}'
             response  = f'adding {username} to the account age whitelist.'
             await self.add_to_aa_whitelist(username)
 
-        elif re.findall(ADD_WL, message):
+        elif re.findall(ADD_WL, message)[0]:
             action, url = True, re.findall(ADD_WL, message)[0]
             message     = f'adding {url} to the whitelist.'
             await self.adjust_whitelist(url, action)
 
-        elif re.findall(DEL_WL, message):
+        elif re.findall(DEL_WL, message)[0]:
             action, url = False, re.findall(DEL_WL, message)[0]
             message     = f'removing {url} from the whitelist.'
             await self.adjust_whitelist(url, action)
