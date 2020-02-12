@@ -28,8 +28,6 @@ class Commands:
         for cmd in self.non_standard_commands:
             setattr(self, f'hakc{cmd}', 0)
 
-        print(self.__dict__)
-
     async def get_standard_command(self, command):
         try:
             message = self.standard_commands[command]['message']

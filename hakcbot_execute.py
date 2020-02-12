@@ -33,7 +33,6 @@ class Execute:
                 continue
 
             cd_expire = getattr(self.Hakcbot.Commands, f'hakc{command}')
-            print(f'TIMESTAMP: {user.timestamp} | CD EXPIRE: {cd_expire}')
             if (user.timestamp < cd_expire or not user.mod or user.name != BROADCASTER):
                 continue
 
