@@ -27,9 +27,9 @@ class Execute:
             if ('(' not in word or not word.endswith(')')):
                 continue
 
-            command     = re.findall(COMMAND, word)
-            command_arg = re.findall(COMMAND_ARG, word)
-            if (not self.valid_command(command)):
+            command     = re.findall(COMMAND, word)[0]
+            command_arg = re.findall(COMMAND_ARG, word)[0]
+            if (not await self.valid_command(command)):
                 continue
 
             cd_expire = getattr(self.Hakcbot.Commands, f'hakc{command}')
@@ -38,24 +38,23 @@ class Execute:
                 continue
 
             if (not command_arg):
-                command, CD = await self.Hakcbot.Commands.get_standard_command(command)
+                cd_name, cd_time = await self.Hakcbot.Commands.get_standard_command(command)
             else:
-                command, CD = await self.Hakcbot.Commands.get_non_standard_command(command, command_arg, user.name)
+                cd_name, cd_time = await self.Hakcbot.Commands.get_non_standard_command(command, command_arg)
 
-            if (CD):
-                await self.command_cooldown(command, CD)
+            if (cd_time):
+                await self.command_cooldown(cd_name, cd_time)
 
             break
 
-    async def command_cooldown(self, command, CD):
-        cd_expire = time.time() + CD
-
-        print(f'Putting {command} on cooldown.')
-        setattr(self.Hakcbot.Commands, f'hakc{command}', cd_expire)
+    async def command_cooldown(self, cd_name, cd_time):
+        cd_expire = time.time() + cd_time
+        print(f'Putting {cd_name} on cooldown.')
+        setattr(self.Hakcbot.Commands, cd_name, cd_expire)
 
     async def valid_command(self, command):
-        if (not command in self.Hakcbot.Commands.standard_commands
-                or not command in self.Hakcbot.Commands.non_standard_commands):
+        if (command not in self.Hakcbot.Commands.standard_commands
+                and command not in self.Hakcbot.Commands.non_standard_commands):
             return False
 
         for bad in self.invalid_chars:

@@ -21,7 +21,7 @@ GIVE_STATUS = re.compile(r'status\((.*?)\)')
 USER_TAGS = re.compile(r'@badge-info=(.*?)user-type=')
 MESSAGE   = re.compile(r'user-type=(.*)')
 
-COMMAND     = re.compile(r'(.*?)(')
+COMMAND     = re.compile(r'(.*?)\(')
 COMMAND_ARG = re.compile(r'\((.*?)\)')
 
 AA_WL  = re.compile(r'aa_wl\((.*?)\)')

@@ -28,6 +28,8 @@ class Commands:
         for cmd in self.non_standard_commands:
             setattr(self, f'hakc{cmd}', 0)
 
+        print(self.__dict__)
+
     async def get_standard_command(self, command):
         try:
             message = self.standard_commands[command]['message']
@@ -48,7 +50,7 @@ class Commands:
 
         return cd_name, cd_time
 
-    async def get_non_standard_command(self, command, arg, username):
+    async def get_non_standard_command(self, command, arg):
         try:
             message = self.non_standard_commands[command]['message']
             cd_name = self.non_standard_commands[command]['cd_name']
@@ -62,16 +64,18 @@ class Commands:
 
             message = self.quotes[arg]
             message = f'{message[0]} - {CHANNEL} {message[1]}'
-            await self.Hakcbot.send_message(message)
 
         elif (command in ['yourmom', 'yourmum']):
-            message = f"{username}'s {message}"
-            await self.Hakcbot.send_message(message)
+            message = f"{arg}'s {message}"
 
         elif (command == 'praise'):
             if (arg == 'thesun'):
                 message += ' (thesun)'
             else:
-                message += f' ({username})'
+                message += f' ({arg})'
+        else:
+            message = "hakcbot had a problem handling non standard command. :'("
+
+        await self.Hakcbot.send_message(message)
 
         return cd_name, cd_time
