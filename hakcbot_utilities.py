@@ -4,6 +4,7 @@ import os
 import json
 import re
 import time
+import asyncio
 
 from hakcbot_regex import NULL
 from config import BROADCASTER
@@ -19,8 +20,32 @@ def write_to_file(data, filename, folder='data'):
     with open(f'{filename}', 'w') as settings:
         json.dump(data, settings, indent=4)
 
+def dynamic_looper(loop_function):
+    '''decorator to maintain daemon loop which will sleep for the returned integer length.
+    if no return is specified, sleep will not be called.'''
+    def wrapper(*args):
+        while True:
+            sleep_len = loop_function(*args)
+            if (not sleep_len): continue
+
+            time.sleep(sleep_len)
+    return wrapper
+
+def async_looper(loop_function):
+    '''async decorator to maintain daemon loop which will sleep for the returned integer length.
+    if no return is specified, sleep will not be called.'''
+    async def wrapper(*args):
+        while True:
+            sleep_len = await loop_function(*args)
+            if (not sleep_len): continue
+
+            await asyncio.sleep(sleep_len)
+    return wrapper
+
+
 class CommandStructure:
     COMMANDS = {}
+    AUTOMATE = {}
 
     @classmethod
     def on_cooldown(cls, c_name):
@@ -31,22 +56,24 @@ class CommandStructure:
         return False
 
     @classmethod
-    def command(cls, c_name, cd_len):
+    def command(cls, cmd, cd, *, auto=None):
+        cls.COMMANDS[cmd] = 0
+        if (auto):
+            cls.AUTOMATE[cmd] = auto
         def decorator(command_function):
-            cls.COMMANDS[c_name] = 0
             async def wrapper(*args, usr):
                 if (usr.mod or usr.name == BROADCASTER): pass # cooldown bypass
-                elif cls.on_cooldown(c_name): return NULL
+                elif cls.on_cooldown(cmd): return NULL
 
                 response = await command_function(*args)
-                return cd_len, (response,) # forcing tuple to ensure general compatibility
+                return cd, (response,) # forcing tuple to ensure general compatibility
             return wrapper
         return decorator
 
     @classmethod
-    def mod(cls, c_name):
+    def mod(cls, cmd):
+        cls.COMMANDS[cmd] = 0
         def decorator(command_function):
-            cls.COMMANDS[c_name] = 0
             async def wrapper(*args, usr):
                 if (not usr.mod and usr.name != BROADCASTER): return NULL
 
@@ -55,9 +82,9 @@ class CommandStructure:
         return decorator
 
     @classmethod
-    def broadcaster(cls, c_name):
+    def broadcaster(cls, cmd):
+        cls.COMMANDS[cmd] = 0
         def decorator(command_function):
-            cls.COMMANDS[c_name] = 0
             async def wrapper(*args, usr):
                 if (usr.name != BROADCASTER): return NULL
 

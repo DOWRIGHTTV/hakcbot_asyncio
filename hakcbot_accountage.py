@@ -6,6 +6,8 @@ import threading
 
 from collections import deque
 
+from hakcbot_utilities import dynamic_looper
+
 
 class AccountAge:
     ''' this class is to check the account age of all users sending messages in the twitch/irc chat. this class is a standard
@@ -30,15 +32,14 @@ class AccountAge:
             print(f'added {user.name} to account age queue!')
             self.account_age_queue.append(user)
 
+    @dynamic_looper
     def handle_queue(self):
-        print('[+] Starting account age queue thread.')
-        while True:
-            if (not self.account_age_queue):
-                time.sleep(1)
-                continue
+#        print('[+] Starting account age queue thread.')
+        if (not self.account_age_queue):
+            return 1
 
-            user = self.account_age_queue.popleft()
-            threading.Thread(target=self.get_accountage, args=(user,)).start()
+        user = self.account_age_queue.popleft()
+        threading.Thread(target=self.get_accountage, args=(user,)).start()
 
     def account_age(function_to_wrap): # pylint: disable=no-self-argument
         def wrapper(self, user, account_age_whitelist=set()):

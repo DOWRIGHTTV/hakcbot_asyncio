@@ -11,8 +11,6 @@ import hakcbot_regex as regex
 from config import BROADCASTER
 from hakcbot_utilities import CommandStructure as cs
 
-THREE_MIN = 180
-
 
 class Commands:
     def __init__(self, Hakcbot):
@@ -22,11 +20,19 @@ class Commands:
 #   STANDARD COMMANDS
 # ====================
 
-    @cs.command('uptime', THREE_MIN)
+    @cs.command('sub', 3, auto=31)
+    async def sub(self):
+        return 'Consider a sub to DOWRIGHT --> https://www.twitch.tv/subs/dowright'
+
+    @cs.command('discord', 3, auto=42)
+    async def discord(self):
+        return 'Join the Discord --> https://Discord.gg/KSCHNfa'
+
+    @cs.command('uptime', 3)
     async def uptime(self):
         return self.Hakcbot.uptime_message
 
-    @cs.command('time', THREE_MIN)
+    @cs.command('time', 3)
     async def time(self):
         ltime = time.strftime('%H:%M:%S', time.localtime())
         return f"{BROADCASTER}'s time is {ltime}"
@@ -35,29 +41,29 @@ class Commands:
 #   NON STANDARD COMMANDS
 # ========================
 
-    @cs.command('title', THREE_MIN)
+    @cs.command('title', 3)
     async def title(self, usr):
         title = self.Hakcbot.titles.get(usr, None)
         if (not title): return None
 
         return f'{usr}, {title}.'
 
-    @cs.command('quote', THREE_MIN)
+    @cs.command('quote', 3)
     async def quote(self, num):
         quote, year = self.Hakcbot.quotes.get(num, (None, None))
         if not quote: return None
 
         return f'{quote} - {BROADCASTER} {year}'
 
-    @cs.command('yourmom', THREE_MIN)
+    @cs.command('yourmom', 3)
     async def yourmom(self, usr):
         return f"{usr}'s mom goes to college."
 
-    @cs.command('yourmum', THREE_MIN)
+    @cs.command('yourmum', 3)
     async def yourmum(self, usr):
         return f"{usr}'s mum goes to college."
 
-    @cs.command('praise', THREE_MIN)
+    @cs.command('praise', 3)
     async def praise(self, usr):
         if (usr == 'thesun'):
             msg = '\\ [T] / (thesun)'

@@ -63,7 +63,7 @@ class Execute:
     async def _apply_cooldown(self, cmd, cd_len):
         print(f'Putting {cmd} on cooldown.')
         print(cmd, cd_len)
-        cs.COMMANDS[cmd] = time.time() + cd_len
+        cs.COMMANDS[cmd] = time.time() + (cd_len*60)
 
     async def _get_command(self, word):
         if not re.fullmatch(VALID_CMD, word):

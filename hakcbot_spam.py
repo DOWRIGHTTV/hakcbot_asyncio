@@ -37,9 +37,8 @@ class Spam:
         print(f'{user.name}: {message}')
         return user, [w.lower() for w in message.split()]
 
-    # checkin message for url regex match, then checking whitelisted users and whitelisted urls,
-    # if not whitelisted then checking urls for more specific url qualities like known TLDs
-    # then timeing out user and notifying chat.
+    # running messages through filter to detect links or banned words. NOTE: this can probably
+    # be refactored much better!
     async def _is_valid_message(self, user, message):
         url_match = re.findall(URL, message)
         banned_word = await self._blacklisted_word(message)
@@ -91,7 +90,7 @@ class Spam:
 
         return ', '.join(matches)
 
-    ## Method to adjust URL whitelist on mod command, will call itself if list is updated
+    ## adjust URL whitelist on mod command, will call itself if list is updated
     ## to update running set white bot is running
     async def adjust_whitelist(self, url=None, action=None):
         config = load_from_file('config.json')
@@ -123,24 +122,24 @@ class Spam:
             username = msg[1].split('!')[0]
             message  = msg[2]
         except Exception as E:
-            raise Exception(f'Parse Error: {E}')
+            print(f'Parse Error: {E}')
+            return None
 
-        else:
-            timestamp = round(time.time())
-            vip = bool(re.search(VIP, tags))
-            sub = bool(int(re.findall(SUB, tags)[0]))
-            mod = bool(int(re.findall(MOD, tags)[0]))
-            # permitting the following roles to post links.
-            permit = bool(sub or vip or mod)
+        timestamp = round(time.time())
+        vip = bool(re.search(VIP, tags))
+        sub = bool(int(re.findall(SUB, tags)[0]))
+        mod = bool(int(re.findall(MOD, tags)[0]))
+        # permitting the following roles to post links.
+        permit = bool(sub or vip or mod)
 
-            usr_permit = self.permit_list.get(username, None)
-            if (not permit and usr_permit):
-                # marking user to be permitted for a link head of time
-                if (time.time() < usr_permit):
-                    permit = True
-                # if expiration detected, will remove user from dict. temporary until better cleaning solution is implemented
-                else:
-                    self.permit_list.pop(username)
+        usr_permit = self.permit_list.get(username, None)
+        if (not permit and usr_permit):
+            # marking user to be permitted for a link head of time
+            if (time.time() < usr_permit):
+                permit = True
+            # if expiration detected, will remove user from dict. temporary until better cleaning solution is implemented
+            else:
+                self.permit_list.pop(username)
 
         return USER_TUPLE(username, sub, vip, mod, permit, timestamp), message
 

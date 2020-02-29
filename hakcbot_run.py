@@ -10,26 +10,27 @@ from socket import socket
 from collections import deque
 
 from hakcbot_init import Init
-from hakcbot_accountage import AccountAge
-from hakcbot_execute import Execute
 from hakcbot_spam import Spam
+from hakcbot_execute import Execute
 from hakcbot_commands import Commands
+from hakcbot_accountage import AccountAge
+from hakcbot_utilities import dynamic_looper, async_looper, CommandStructure as cs
 
 
 class Hakcbot:
     def __init__(self):
         self.sock = socket()
-        self.Init   = Init(self)
+        self.Init = Init(self)
 
         self.Automate = Automate(self)
-        self.Execute = Execute(self)
-        self.Spam = Spam(self)
+        self.Spam     = Spam(self)
+        self.Execute  = Execute(self)
         self.Commands = Commands(self)
         self.AccountAge = AccountAge(self)
 
-        self.linecount = 0
-
         self.online = False
+        self.linecount = 0
+        self.last_message = 0
         self.uptime_message = 'hakbot is still initializing! try again in a bit.'
 
     def start(self):
@@ -79,6 +80,7 @@ class Hakcbot:
             if (not valid_data): return
 
             self.linecount += 1
+            self.last_message = time.time()
             user, message = valid_data
             # function will check if already in progress before sending to the queue
             await self.AccountAge.add_to_queue(user)
@@ -87,21 +89,11 @@ class Hakcbot:
         # placeholder for when i want to track joins/ see if a user joins
         elif ('JOIN' in data): pass
 
-    # async def hakc_automation(self):
-    #     cmds = []
-    #     timers = []
-
-    #     for t_count, cmd in enumerate(self.Commands.automated, 1):
-    #         cmds.append(cmd)
-    #         timers.append(self.Commands.automated[cmd]['timer'])
-
-    #     try:
-    #         await asyncio.gather(
-    #             self.Automate.reset_line_count(), self.Automate.timeout(),
-    #             *[self.Automate.timers(cmds[t], timers[t]) for t in range(t_count)])
-
-    #     except Exception as E:
-    #         print(f'AsyncIO General Error | {E}')
+    async def hakc_automation(self):
+        await asyncio.gather(
+            self.Automate.reset_line_count(),
+            self.Automate.timeout(),
+            *[self.Automate.timers(k, v) for k,v in cs.AUTOMATE.items()])
 
     # pylint: disable=undefined-variable
     async def send_message(self, message, response=None):
@@ -110,33 +102,29 @@ class Hakcbot:
         message = f'PRIVMSG #{CHANNEL} :{message}'
 
         await loop.sock_sendall(self.sock, f'{message}\r\n'.encode('utf-8'))
-        if (response):
-            response = f'PRIVMSG #{CHANNEL} :{response}'
-            await loop.sock_sendall(self.sock, f'{response}\r\n'.encode('utf-8'))
+        if (not response): return
 
-    # if there is a problem resolving or looking up the uptime, the bot will show an error message
+        response = f'PRIVMSG #{CHANNEL} :{response}'
+        await loop.sock_sendall(self.sock, f'{response}\r\n'.encode('utf-8'))
+
+    @dynamic_looper
     def uptime_thread(self):
-        print('[+] Starting Uptime tracking thread.')
-        while True:
-            error = False
-            try:
-                uptime = requests.get(f'https://decapi.me/twitch/uptime?channel={CHANNEL}')
-                uptime = uptime.text.strip('\n')
-            except Exception:
-                error = True
-
-            if (not error and uptime == 'dowright is offline'):
+#        print('[+] Starting Uptime tracking thread.')
+        try:
+            uptime = requests.get(f'https://decapi.me/twitch/uptime?channel={CHANNEL}')
+            uptime = uptime.text.strip('\n')
+        except Exception:
+            self.uptime_message = 'Hakcbot is currently being a dumb dumb. :/'
+        else:
+            if (uptime == 'dowright is offline'):
                 self.online = False
-                message = 'DOWRIGHT is OFFLINE'
-            elif (not error):
-                self.online = True
-                message = f'DOWRIGHT has been live for {uptime}'
+                self.uptime_message = 'DOWRIGHT is OFFLINE'
             else:
-                message = 'Hakcbot is currently being a dumb dumb. :/'
+                self.online = True
+                self.uptime_message = f'DOWRIGHT has been live for {uptime}'
 
-            self.uptime_message = message
+        return 90
 
-            time.sleep(90)
 
 class Automate:
     def __init__(self, Hakcbot):
@@ -145,39 +133,33 @@ class Automate:
         self.flag_for_timeout = deque()
         self.thread_message_queue = deque()
 
+    @async_looper
     async def reset_line_count(self):
-        while True:
-            await asyncio.sleep(60 * 5)
+        time_elapsed = time.time() - self.Hakcbot.last_message
+        if (time_elapsed > 300):
             self.Hakcbot.linecount = 0
 
+        return 300
+
     async def timers(self, cmd, timer):
-        try:
-            message = self.Hakcbot.Commands.standard_commands[cmd]['message']
-            while True:
-                await asyncio.sleep(60 * timer)
-                cooldown = getattr(self.Hakcbot.Commands, f'hakc{cmd}')
-                if (not cooldown and self.Hakcbot.linecount >= 3):
-                    await self.Hakcbot.send_message(message)
-                elif (cooldown):
-                    print(f'hakcbot: {cmd} command on cooldown')
-        except Exception as E:
-            print(f'AsyncIO Timer Error: {E}')
+        if (self.Hakcbot.linecount >= 3):
+            await getattr(self.Hakcbot.Commands, cmd)(usr=None)
 
+        return 60 * timer
+
+    @async_looper
     async def timeout(self):
-        while True:
-            if (not self.flag_for_timeout):
-                await asyncio.sleep(1)
-                continue
+        if (not self.flag_for_timeout): return 1
 
-            while self.flag_for_timeout:
-                username = self.flag_for_timeout.popleft()
-                message = f'/timeout {username} 3600 account age less than one day.'
-                response = f'{username}, you have been timed out for having an account age \
-                    less that one day old. this is to prevent bot spam. if you are a human \
-                    (i can tell from first message), i will remove the timeout when i see it, \
-                    sorry!'
+        while self.flag_for_timeout:
+            username = self.flag_for_timeout.popleft()
+            message = f'/timeout {username} 3600 account age less than one day.'
+            response = f'{username}, you have been timed out for having an account age \
+                less that one day old. this is to prevent bot spam. if you are a human \
+                (i can tell from first message), i will remove the timeout when i see it, \
+                sorry!'
 
-                await self.Hakcbot.send_message(message, response)
+            await self.Hakcbot.send_message(message, response)
 
 def main():
     Hb = Hakcbot()
