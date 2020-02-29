@@ -1,26 +1,25 @@
 #!/usr/bin/python3
 
 import threading, asyncio
-import re, json
 import requests
 import time
 import traceback
 
 from config import *
+from socket import socket
 from collections import deque
 
-from hakcbot_utilities import load_from_file
-
-from hakcbot_init import Hakcbot
+from hakcbot_init import Init
 from hakcbot_accountage import AccountAge
 from hakcbot_execute import Execute
 from hakcbot_spam import Spam
 from hakcbot_commands import Commands
 
 
-class Run:
+class Hakcbot:
     def __init__(self):
-        self.Hakcbot = Hakcbot()
+        self.sock = socket()
+        self.Init   = Init(self)
 
         self.Automate = Automate(self)
         self.Execute = Execute(self)
@@ -43,59 +42,66 @@ class Run:
         asyncio.run(self.main())
 
     async def main(self):
-        await self.Hakcbot.connect()
+        await self.Init.initialize()
 
         await self.Spam.create_tld_set()
         await self.Spam.adjust_blacklist()
         await self.Spam.adjust_whitelist()
 
-        await asyncio.gather(self.hakc_general(), self.hakc_automation())
+        await asyncio.gather(self.hakc_general()) #, self.hakc_automation())
 
     async def hakc_general(self):
         loop = asyncio.get_running_loop()
-        recv_buffer =  ''
-        try:
-            while True:
-                recv_buffer = await loop.sock_recv(self.Hakcbot.sock, 1024)
-                recv_buffer = recv_buffer.decode('utf-8', 'ignore')
-                chat = recv_buffer.split('\n')
-                recv_buffer = chat.pop()
+        while True:
+            try:
+                data = await loop.sock_recv(self.sock, 1024)
+            except OSError as E:
+                print(f'MAIN SOCKET ERROR | ATTEMPING RECONNECT | {E}')
+                break
+            else:
+                if (not data):
+                    print('SOCKET CLOSED BY REMOTE SERVER | ATTEMPING RECONNECT')
+                    break
 
-                for line in chat:
-                    if ('PING :tmi.twitch.tv\r' == line):
-                        await loop.sock_sendall(self.Hakcbot.sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
+                await self._message_handler(data.decode('utf-8', 'ignore').strip())
 
-                    elif ('PRIVMSG' in line):
-                        blocked_message, user, message = await self.Spam.main(line)
-                        if (blocked_message or not user):
-                            continue
+        # closing socket and recursively calling main to attempt reconnect
+        self.sock.close()
+        await self.main()
 
-                        print(f'{user.name}: {message}')
-                        await self.Execute.parse_message(user, message.split())
-                        self.linecount += 1
+    async def _message_handler(self, data):
+        loop = asyncio.get_running_loop()
+        if (data == 'PING :tmi.twitch.tv'):
+            await loop.sock_sendall(self.sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
 
-                    elif ('JOIN' in line):
-                        pass
-                        # placeholder for when i want to track joins/ see if a user joins
-        except Exception as E:
-            traceback.print_exc()
-            print(f'Main Process Error: {E}')
+        elif ('PRIVMSG' in data):
+            valid_data = await self.Spam.main(data)
+            if (not valid_data): return
 
-    async def hakc_automation(self):
-        cmds = []
-        timers = []
+            self.linecount += 1
+            user, message = valid_data
+            # function will check if already in progress before sending to the queue
+            await self.AccountAge.add_to_queue(user)
+            await self.Execute.parse_message(user, message)
 
-        for t_count, cmd in enumerate(self.Commands.automated, 1):
-            cmds.append(cmd)
-            timers.append(self.Commands.automated[cmd]['timer'])
+        # placeholder for when i want to track joins/ see if a user joins
+        elif ('JOIN' in data): pass
 
-        try:
-            await asyncio.gather(
-                self.Automate.reset_line_count(), self.Automate.timeout(),
-                *[self.Automate.timers(cmds[t], timers[t]) for t in range(t_count)])
+    # async def hakc_automation(self):
+    #     cmds = []
+    #     timers = []
 
-        except Exception as E:
-            print(f'AsyncIO General Error | {E}')
+    #     for t_count, cmd in enumerate(self.Commands.automated, 1):
+    #         cmds.append(cmd)
+    #         timers.append(self.Commands.automated[cmd]['timer'])
+
+    #     try:
+    #         await asyncio.gather(
+    #             self.Automate.reset_line_count(), self.Automate.timeout(),
+    #             *[self.Automate.timers(cmds[t], timers[t]) for t in range(t_count)])
+
+    #     except Exception as E:
+    #         print(f'AsyncIO General Error | {E}')
 
     # pylint: disable=undefined-variable
     async def send_message(self, message, response=None):
@@ -103,10 +109,10 @@ class Run:
         print(f'hakcbot: {message}')
         message = f'PRIVMSG #{CHANNEL} :{message}'
 
-        await loop.sock_sendall(self.Hakcbot.sock, f'{message}\r\n'.encode('utf-8'))
+        await loop.sock_sendall(self.sock, f'{message}\r\n'.encode('utf-8'))
         if (response):
             response = f'PRIVMSG #{CHANNEL} :{response}'
-            await loop.sock_sendall(self.Hakcbot.sock, f'{response}\r\n'.encode("utf-8"))
+            await loop.sock_sendall(self.sock, f'{response}\r\n'.encode('utf-8'))
 
     # if there is a problem resolving or looking up the uptime, the bot will show an error message
     def uptime_thread(self):
@@ -124,8 +130,7 @@ class Run:
                 message = 'DOWRIGHT is OFFLINE'
             elif (not error):
                 self.online = True
-                message = self.Commands.standard_commands['uptime']['message']
-                message = f'{message} {uptime}'
+                message = f'DOWRIGHT has been live for {uptime}'
             else:
                 message = 'Hakcbot is currently being a dumb dumb. :/'
 
@@ -175,8 +180,8 @@ class Automate:
                 await self.Hakcbot.send_message(message, response)
 
 def main():
-    Hakcbot = Run()
-    Hakcbot.start()
+    Hb = Hakcbot()
+    Hb.start()
 
 if __name__ == '__main__':
     try:

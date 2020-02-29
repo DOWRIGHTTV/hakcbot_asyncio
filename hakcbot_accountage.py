@@ -23,6 +23,7 @@ class AccountAge:
         threading.Thread(target=self.handle_queue).start()
 
     async def add_to_queue(self, user):
+        '''async io function for adding tasks to account age queue.'''
         if (user.name not in self.aa_check_in_progress):
             self.aa_check_in_progress.add(user.name)
 
@@ -39,14 +40,13 @@ class AccountAge:
             user = self.account_age_queue.popleft()
             threading.Thread(target=self.get_accountage, args=(user,)).start()
 
-    # pylint: disable=no-self-argument, not-callable
-    def account_age(function_to_wrap):
+    def account_age(function_to_wrap): # pylint: disable=no-self-argument
         def wrapper(self, user, account_age_whitelist=set()):
             if (user.sub or user.vip or user.name in account_age_whitelist
                     or user.name in self.Hakcbot.Spam.aa_whitelist):
                 return
 
-            timeout, vd, aa = function_to_wrap(self, user.name)
+            timeout, vd, aa = function_to_wrap(self, user.name) # pylint: disable=not-callable
             if (timeout is None):
                 pass
             elif (timeout):

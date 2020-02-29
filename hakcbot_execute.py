@@ -11,7 +11,11 @@ import traceback
 
 from config import *
 from hakcbot_regex import *
+from hakcbot_utilities import load_from_file, write_to_file
 from datetime import datetime
+from hakcbot_commands import Commands
+from hakcbot_utilities import CommandStructure as cs
+
 
 class Execute:
     def __init__(self, Hakcbot):
@@ -19,46 +23,58 @@ class Execute:
 
         self.invalid_chars = ['!', '/', '.', ' ']
 
+    ## checking each word in message for a command.
     async def parse_message(self, user, message):
-        ## Checking each word in message for a command. if a command is found will switch go to be true
-        ## which will prevent any further checks. this makes it so only the first command gets ran.
         for word in message:
-            word = word.lower().strip('\r')
-            if ('(' not in word or not word.endswith(')')):
+            cmd, args = await self._get_command(word)
+            if (not cmd): continue
+
+            try:
+                cd_len, response = await getattr(self.Hakcbot.Commands, cmd)(*args, usr=user)
+            except TypeError:
                 continue
 
-            command     = re.findall(COMMAND, word)[0]
-            command_arg = re.findall(COMMAND_ARG, word)[0]
-            if (not await self.valid_command(command)):
-                continue
+            if (cd_len):
+                await self._apply_cooldown(cmd, cd_len)
+            if (response):
+                await self.Hakcbot.send_message(*response)
 
-            cd_expire = getattr(self.Hakcbot.Commands, f'hakc{command}')
-            if (user.timestamp < cd_expire and not user.mod and user.name != BROADCASTER):
-                continue
+    ## adjust URL whitelist on mod command, will call itself if list is updated
+    ## to update running set while bot is running.
+    async def adjust_titles(self, user=None, title=None, action=None):
+        loop   = asyncio.get_running_loop()
+        config = load_from_file('config.json')
 
-            if (not command_arg):
-                cd_name, cd_time = await self.Hakcbot.Commands.get_standard_command(command)
-            else:
-                cd_name, cd_time = await self.Hakcbot.Commands.get_non_standard_command(command, command_arg)
+        self.titles = config['titles']
+        if (not user):
+            return
 
-            if (cd_time):
-                await self.command_cooldown(cd_name, cd_time)
+        if (action is True):
+            self.titles[user.lower()] = title
+            print(f'hakcbot: added title: {title} for {user}')
 
-            break
+        elif (action is False):
+            self.titles.pop(user.lower(), None)
+            print(f'hakcbot: removed title: {title} for {user}')
 
-    async def command_cooldown(self, cd_name, cd_time):
-        cd_expire = time.time() + cd_time
-        print(f'Putting {cd_name} on cooldown.')
-        setattr(self.Hakcbot.Commands, cd_name, cd_expire)
+        await loop.run_in_executor(None, write_to_file, config, 'config.json')
+        await self.adjust_titles()
 
-    async def valid_command(self, command):
-        if (command not in self.Hakcbot.Commands.standard_commands
-                and command not in self.Hakcbot.Commands.non_standard_commands):
-            return False
+    async def _apply_cooldown(self, cmd, cd_len):
+        print(f'Putting {cmd} on cooldown.')
+        print(cmd, cd_len)
+        cs.COMMANDS[cmd] = time.time() + cd_len
 
+    async def _get_command(self, word):
+        if not re.fullmatch(VALID_CMD, word):
+            return NULL
+
+        cmd = re.findall(CMD, word)[0]
+        if (cmd not in cs.COMMANDS):
+            return NULL
+
+        args = re.findall(ARG, word)[0]
         for bad in self.invalid_chars:
-            if bad not in command: continue
+            if (bad in cmd or bad in args): return NULL
 
-            return False
-
-        return True
+        return cmd, tuple(a for a in args.split(',') if a)

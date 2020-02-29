@@ -6,74 +6,93 @@ import time
 import asyncio
 import requests
 
-# pylint: disable=no-name-in-module, unused-wildcard-import
-from hakcbot_regex import *
-from config import CHANNEL
-from hakcbot_utilities import load_from_file
+import hakcbot_regex as regex
+
+from config import BROADCASTER
+from hakcbot_utilities import CommandStructure as cs
+
+THREE_MIN = 180
 
 
 class Commands:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-        config = load_from_file('config.json')
-        self.standard_commands     = config['commands']['standard']
-        self.non_standard_commands = config['commands']['non_standard']
-        self.automated             = config['commands']['automated']
-        self.quotes                = config['quotes']
+# ====================
+#   STANDARD COMMANDS
+# ====================
 
-        for cmd in self.standard_commands:
-            setattr(self, f'hakc{cmd}', 0)
+    @cs.command('uptime', THREE_MIN)
+    async def uptime(self):
+        return self.Hakcbot.uptime_message
 
-        for cmd in self.non_standard_commands:
-            setattr(self, f'hakc{cmd}', 0)
+    @cs.command('time', THREE_MIN)
+    async def time(self):
+        ltime = time.strftime('%H:%M:%S', time.localtime())
+        return f"{BROADCASTER}'s time is {ltime}"
 
-    async def get_standard_command(self, command):
-        try:
-            message = self.standard_commands[command]['message']
-            cd_name = self.standard_commands[command]['cd_name']
-            cd_time = self.standard_commands[command]['cd_time']
-        except KeyError:
-            return None, None
+# ========================
+#   NON STANDARD COMMANDS
+# ========================
 
-        if (command == 'uptime'):
-            message = self.Hakcbot.uptime_message
+    @cs.command('title', THREE_MIN)
+    async def title(self, usr):
+        title = self.Hakcbot.titles.get(usr, None)
+        if (not title): return None
 
-        if (command == 'time'):
-            current_time = time.localtime()
-            ltime = time.strftime('%H:%M:%S', current_time)
-            message = f'{message} {ltime}'
+        return f'{usr}, {title}.'
 
-        await self.Hakcbot.send_message(message)
+    @cs.command('quote', THREE_MIN)
+    async def quote(self, num):
+        quote, year = self.Hakcbot.quotes.get(num, (None, None))
+        if not quote: return None
 
-        return cd_name, cd_time
+        return f'{quote} - {BROADCASTER} {year}'
 
-    async def get_non_standard_command(self, command, arg):
-        try:
-            message = self.non_standard_commands[command]['message']
-            cd_name = self.non_standard_commands[command]['cd_name']
-            cd_time = self.non_standard_commands[command]['cd_time']
-        except KeyError:
-            return None, None
+    @cs.command('yourmom', THREE_MIN)
+    async def yourmom(self, usr):
+        return f"{usr}'s mom goes to college."
 
-        if (command == 'quote'):
-            if (arg not in self.quotes):
-                return None, None
+    @cs.command('yourmum', THREE_MIN)
+    async def yourmum(self, usr):
+        return f"{usr}'s mum goes to college."
 
-            message = self.quotes[arg]
-            message = f'{message[0]} - {CHANNEL} {message[1]}'
-
-        elif (command in ['yourmom', 'yourmum']):
-            message = f"{arg}'s {message}"
-
-        elif (command == 'praise'):
-            if (arg == 'thesun'):
-                message += ' (thesun)'
-            else:
-                message += f' ({arg})'
+    @cs.command('praise', THREE_MIN)
+    async def praise(self, usr):
+        if (usr == 'thesun'):
+            msg = '\\ [T] / (thesun)'
         else:
-            message = "hakcbot had a problem handling non standard command. :'("
+            msg = f'\\ [T] / ({usr})'
 
-        await self.Hakcbot.send_message(message)
+        return msg
 
-        return cd_name, cd_time
+# ===============
+#   MOD COMMANDS
+# ===============
+    @cs.mod('permit')
+    async def permit(self, usr):
+        await self.Hakcbot.Spam.permit_link(usr, length=3)
+        message  = f'/untimeout {usr}'
+        response = f'{usr} can post links for 3 minutes.'
+        return message, response
+
+    @cs.mod('aa_wl')
+    async def aa_wl(self, usr):
+        await self.Hakcbot.Spam.add_to_aa_whitelist(usr)
+        message  = f'/untimeout {usr}'
+        response = f'adding {usr} to the account age whitelist.'
+        return message, response
+
+    @cs.mod('add_wl')
+    async def add_wl(self, url):
+        await self.Hakcbot.Spam.adjust_whitelist(url, action=True)
+        message = f'adding {url} to the whitelist.'
+
+        return message, None
+
+    @cs.mod('del_wl')
+    async def del_wl(self, url):
+        await self.Hakcbot.Spam.adjust_whitelist(url, action=False)
+        message = f'adding {url} to the whitelist.'
+
+        return message, None
