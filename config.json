@@ -100,25 +100,25 @@
             }
         },
         "automated": {
-            "sub":{
+            "sub": {
                 "timer": 99
             },
-            "commands":{
+            "commands": {
                 "timer": 87
             },
-            "discord":{
+            "discord": {
                 "timer": 59
             },
-            "github":{
+            "github": {
                 "timer": 47
             }
         }
     },
-    "blacklist": [
+    "word_filter": [
         "kingdombattles",
         "kingdom battles"
     ],
-    "whitelist": [
+    "url_whitelist": [
         "docs.python.org",
         "python.org",
         "pastebin.com",
@@ -127,7 +127,9 @@
         "automatetheboringstuff.com",
         "hastebin.com"
     ],
-    "titles":{},
+    "titles": {
+        "dowright": "best streamer ever"
+    },
     "quotes": {
         "1": [
             "im just a boy and his dog",

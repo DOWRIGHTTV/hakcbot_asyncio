@@ -2,13 +2,30 @@
 
 import re
 
+from enum import Enum
+from collections import namedtuple
+
 NULL = (None, None)
+USER_TUPLE = namedtuple('user', 'name bcast mod sub vip permit timestamp')
+
+class AA(Enum):
+    ERROR  = 0
+    ACCEPT = 1
+    DROP   = 2
+
+class AK(Enum):
+    DEL = 0
+    ADD = 1
+    MOD = 2
+    EXIST = -1
 
 SUB = re.compile(r'subscriber=(.*?);')
 VIP = re.compile(r'vip/1')
 MOD = re.compile(r'mod=(.*?);')
 USER_TAGS = re.compile(r'@badge-info=(.*?)user-type=')
 MESSAGE   = re.compile(r'user-type=(.*)')
+TITLE = re.compile(r'(?P<quote>[\'"]).*?(?P=quote)')
+
 
 VALID_CMD = re.compile(r'(.*?)\((.*?)\)')
 CMD = re.compile(r'(.*?)\(')

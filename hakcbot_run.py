@@ -7,14 +7,17 @@ import traceback
 
 from config import *
 from socket import socket
-from collections import deque
+from collections import deque, namedtuple
 
 from hakcbot_init import Init
 from hakcbot_spam import Spam
 from hakcbot_execute import Execute
 from hakcbot_commands import Commands
 from hakcbot_accountage import AccountAge
+
+from hakcbot_regex import USER_TUPLE
 from hakcbot_utilities import dynamic_looper, async_looper, CommandStructure as cs
+from hakcbot_utilities import load_from_file, write_to_file, Log as L
 
 
 class Hakcbot:
@@ -23,6 +26,7 @@ class Hakcbot:
         self.Init = Init(self)
 
         self.Automate = Automate(self)
+        self.Threads  = Threads(self)
         self.Spam     = Spam(self)
         self.Execute  = Execute(self)
         self.Commands = Commands(self)
@@ -34,8 +38,7 @@ class Hakcbot:
         self.uptime_message = 'hakbot is still initializing! try again in a bit.'
 
     def start(self):
-        threading.Thread(target=self.uptime_thread).start()
-
+        self.Threads.start()
         self.AccountAge.start()
 
         loop = asyncio.new_event_loop()
@@ -45,23 +48,20 @@ class Hakcbot:
     async def main(self):
         await self.Init.initialize()
 
-        await self.Spam.create_tld_set()
-        await self.Spam.adjust_blacklist()
-        await self.Spam.adjust_whitelist()
-
-        await asyncio.gather(self.hakc_general()) #, self.hakc_automation())
+        await asyncio.gather(self.hakc_general(), self.hakc_automation())
 
     async def hakc_general(self):
+        L.l1('[+] Starting main bot process.')
         loop = asyncio.get_running_loop()
         while True:
             try:
                 data = await loop.sock_recv(self.sock, 1024)
             except OSError as E:
-                print(f'MAIN SOCKET ERROR | ATTEMPING RECONNECT | {E}')
+                L.l3(f'MAIN SOCKET ERROR | ATTEMPING RECONNECT | {E}')
                 break
             else:
                 if (not data):
-                    print('SOCKET CLOSED BY REMOTE SERVER | ATTEMPING RECONNECT')
+                    L.l3('SOCKET CLOSED BY REMOTE SERVER | ATTEMPING RECONNECT')
                     break
 
                 await self._message_handler(data.decode('utf-8', 'ignore').strip())
@@ -76,54 +76,35 @@ class Hakcbot:
             await loop.sock_sendall(self.sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
 
         elif ('PRIVMSG' in data):
-            valid_data = await self.Spam.main(data)
+            valid_data = await self.Spam.pre_process(data)
             if (not valid_data): return
 
             self.linecount += 1
             self.last_message = time.time()
             user, message = valid_data
             # function will check if already in progress before sending to the queue
-            await self.AccountAge.add_to_queue(user)
-            await self.Execute.parse_message(user, message)
+            self.AccountAge.add_to_queue(user)
+            await self.Execute.task_handler(user, message)
 
         # placeholder for when i want to track joins/ see if a user joins
         elif ('JOIN' in data): pass
 
     async def hakc_automation(self):
+        L.l1('[+] Starting automated command process.')
         await asyncio.gather(
             self.Automate.reset_line_count(),
             self.Automate.timeout(),
-            *[self.Automate.timers(k, v) for k,v in cs.AUTOMATE.items()])
+            *[self.Automate.timers(k, v) for k,v in self.Commands._AUTOMATE.items()])
 
-    # pylint: disable=undefined-variable
-    async def send_message(self, message, response=None):
+    async def send_message(self, *msgs):
         loop = asyncio.get_running_loop()
-        print(f'hakcbot: {message}')
-        message = f'PRIVMSG #{CHANNEL} :{message}'
-
-        await loop.sock_sendall(self.sock, f'{message}\r\n'.encode('utf-8'))
-        if (not response): return
-
-        response = f'PRIVMSG #{CHANNEL} :{response}'
-        await loop.sock_sendall(self.sock, f'{response}\r\n'.encode('utf-8'))
-
-    @dynamic_looper
-    def uptime_thread(self):
-#        print('[+] Starting Uptime tracking thread.')
-        try:
-            uptime = requests.get(f'https://decapi.me/twitch/uptime?channel={CHANNEL}')
-            uptime = uptime.text.strip('\n')
-        except Exception:
-            self.uptime_message = 'Hakcbot is currently being a dumb dumb. :/'
-        else:
-            if (uptime == 'dowright is offline'):
-                self.online = False
-                self.uptime_message = 'DOWRIGHT is OFFLINE'
-            else:
-                self.online = True
-                self.uptime_message = f'DOWRIGHT has been live for {uptime}'
-
-        return 90
+        for msg in msgs:
+            # ensuring empty returns to do not get sent over irc
+            if not msg: continue
+            L.l2(f'{IDENT}: {msg}')
+            await loop.sock_sendall(
+                self.sock, f'PRIVMSG #{CHANNEL} :{msg}\r\n'.encode('utf-8')
+            )
 
 
 class Automate:
@@ -131,7 +112,10 @@ class Automate:
         self.Hakcbot = Hakcbot
 
         self.flag_for_timeout = deque()
-        self.thread_message_queue = deque()
+        self.hakcusr = USER_TUPLE(
+            'hakcbot', False, False, False,
+            False, True, time.time()
+        )
 
     @async_looper
     async def reset_line_count(self):
@@ -141,9 +125,10 @@ class Automate:
 
         return 300
 
+    @async_looper
     async def timers(self, cmd, timer):
         if (self.Hakcbot.linecount >= 3):
-            await getattr(self.Hakcbot.Commands, cmd)(usr=None)
+            getattr(self.Hakcbot.Commands, cmd)(usr=self.hakcusr)
 
         return 60 * timer
 
@@ -161,6 +146,50 @@ class Automate:
 
             await self.Hakcbot.send_message(message, response)
 
+
+class Threads:
+    def __init__(self, Hakcbot):
+        self.Hakcbot = Hakcbot
+
+        self._config_update_queue = deque()
+
+    def start(self):
+        L.l1('[+] Starting bot threads.')
+        threading.Thread(target=self._uptime).start()
+        threading.Thread(target=self._update_config).start()
+
+    def add_file_task(self, obj_name):
+        self._config_update_queue.append(obj_name)
+
+    @dynamic_looper
+    def _update_config(self):
+        if not self._config_update_queue: return 5
+
+        obj_name = self._config_update_queue.popleft()
+
+        config = load_from_file('config.json')
+        if (obj_name not in config): return None
+
+        config[obj_name] = getattr(self.Hakcbot, obj_name)
+        write_to_file(config, 'config.json')
+
+    @dynamic_looper
+    def _uptime(self):
+        try:
+            uptime = requests.get(f'https://decapi.me/twitch/uptime?channel={CHANNEL}')
+        except Exception:
+            self.Hakcbot.uptime_message = 'Hakcbot is currently being a dumb dumb. :/'
+        else:
+            uptime = uptime.text.strip('\n')
+            if (uptime == 'dowright is offline'):
+                self.Hakcbot.online = False
+                self.Hakcbot.uptime_message = 'DOWRIGHT is OFFLINE'
+            else:
+                self.Hakcbot.online = True
+                self.Hakcbot.uptime_message = f'DOWRIGHT has been live for {uptime}'
+
+        return 90
+
 def main():
     Hb = Hakcbot()
     Hb.start()
@@ -169,4 +198,4 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print('Exiting Hakcbot :(')
+        print('\nExiting Hakcbot :(')

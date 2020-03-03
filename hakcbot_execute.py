@@ -13,68 +13,103 @@ from config import *
 from hakcbot_regex import *
 from hakcbot_utilities import load_from_file, write_to_file
 from datetime import datetime
-from hakcbot_commands import Commands
-from hakcbot_utilities import CommandStructure as cs
+from hakcbot_utilities import Log as L
+from string import ascii_letters, digits
 
 
 class Execute:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-        self.invalid_chars = ['!', '/', '.', ' ']
-
     ## checking each word in message for a command.
-    async def parse_message(self, user, message):
+    async def task_handler(self, user, message):
+        # if user is broadcaster and the join of words matches a valid command, the return will be the join.
+        # otherwise the original message will be returned
+        message = self._special_check(user, message)
         for word in message:
-            cmd, args = await self._get_command(word)
+            cmd, args = self._get_command(word)
             if (not cmd): continue
 
             try:
-                cd_len, response = await getattr(self.Hakcbot.Commands, cmd)(*args, usr=user)
-            except TypeError:
+                cd_len, response = getattr(self.Hakcbot.Commands, cmd)(*args, usr=user) # pylint: disable=not-an-iterable
+            except Exception as E:
+                L.l0(E)
                 continue
 
             if (cd_len):
-                await self._apply_cooldown(cmd, cd_len)
+                self._apply_cooldown(cmd, cd_len)
             if (response):
                 await self.Hakcbot.send_message(*response)
 
-    ## adjust URL whitelist on mod command, will call itself if list is updated
-    ## to update running set while bot is running.
-    async def adjust_titles(self, user=None, title=None, action=None):
-        loop   = asyncio.get_running_loop()
+    def adjust_whitelist(self, url, action=AK.ADD):
+        if (action is AK.ADD):
+            self.Hakcbot.url_whitelist.append(url.lower())
+            L.l1('{IDENT}: added {url} to whitelist')
+
+        elif (action is AK.DEL):
+            self.Hakcbot.url_whitelist.pop(url.lower(), None)
+            L.l1(f'{IDENT}: removed {url} from whitelist')
+
+        self.Hakcbot.Threads.add_file_task('url_whitelist')
+
+    # NOTE: currently unused
+    def adjust_blacklist(self, url=None, action=None):
         config = load_from_file('config.json')
+        self.blacklist = set(config['blacklist'])
 
-        self.titles = config['titles']
-        if (not user):
-            return
+    def adjust_titles(self, name, title, *, action=AK.ADD):
+        if (action is AK.ADD):
+            self.Hakcbot.titles[name] = title
+            L.l1(f'{IDENT}: added title for {name}, the {title}.')
 
-        if (action is True):
-            self.titles[user.lower()] = title
-            print(f'hakcbot: added title: {title} for {user}')
+        elif (action is AK.MOD):
+            old_title = self.Hakcbot.titles.get(name)
+            self.Hakcbot.titles[name] = title
+            L.l1(f'{IDENT}: updated title for {name}, the {title} formerly the {old_title}.')
 
-        elif (action is False):
-            self.titles.pop(user.lower(), None)
-            print(f'hakcbot: removed title: {title} for {user}')
+        elif (action is AK.DEL):
+            self.Hakcbot.titles.pop(name, None)
+            L.l1(f'{IDENT}: removed title for {name}, the {title}.')
 
-        await loop.run_in_executor(None, write_to_file, config, 'config.json')
-        await self.adjust_titles()
+        self.Hakcbot.Threads.add_file_task('titles')
 
-    async def _apply_cooldown(self, cmd, cd_len):
-        print(f'Putting {cmd} on cooldown.')
-        print(cmd, cd_len)
-        cs.COMMANDS[cmd] = time.time() + (cd_len*60)
+    def _special_check(self, usr, msg):
+        if (not usr.bcast): return msg
 
-    async def _get_command(self, word):
-        if not re.fullmatch(VALID_CMD, word):
-            return NULL
+        join_msg = ' '.join(msg)
+        if not re.fullmatch(VALID_CMD, join_msg): return msg
+
+        cmd = re.findall(CMD, join_msg)[0]
+        if cmd not in self.Hakcbot.Commands._SPECIAL: return msg
+
+        L.l3(f'returning special command {join_msg}')
+        return [join_msg]
+
+    def _get_title(self, arg):
+        title = re.match(TITLE, arg)
+        return title[0] if title else None
+
+    def _apply_cooldown(self, cmd, cd_len):
+        L.l1(f'Putting {cmd} on cooldown.')
+        self.Hakcbot.Commands._COMMANDS[cmd] = time.time() + (cd_len*60)
+
+    def _get_command(self, word):
+        if not re.fullmatch(VALID_CMD, word): return NULL
 
         cmd = re.findall(CMD, word)[0]
-        if (cmd not in cs.COMMANDS):
-            return NULL
+        if (cmd not in self.Hakcbot.Commands._COMMANDS): return NULL
 
         args = re.findall(ARG, word)[0]
-        for bad in self.invalid_chars:
-            if (bad in cmd or bad in args): return NULL
+        for l in cmd:
+            if (not l.isalnum()): return NULL
 
-        return cmd, tuple(a for a in args.split(',') if a)
+        if (args.startswith(',') or args.endswith(',')): return NULL
+        args = args.split(',')
+        L.l3(f'pre args filter | {args}')
+        for arg in args:
+            title = self._get_title(arg.strip())
+            if (title): continue
+            for l in arg:
+                if (not l.isalnum()): return NULL
+
+        return cmd, tuple(a.strip() for a in args if a)

@@ -6,7 +6,9 @@ import threading
 
 from collections import deque
 
-from hakcbot_utilities import dynamic_looper
+from config import BROADCASTER
+from hakcbot_regex import AA
+from hakcbot_utilities import dynamic_looper, Log as L
 
 
 class AccountAge:
@@ -18,52 +20,47 @@ class AccountAge:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-        self.account_age_queue    = deque()
-        self.aa_check_in_progress = set()
+        self._account_age_queue = deque()
+        self._check_in_progress = set()
+
+        self.whitelist = set()
 
     def start(self):
+        L.l1('[+] Starting account age queue thread.')
         threading.Thread(target=self.handle_queue).start()
 
-    async def add_to_queue(self, user):
+    def add_to_queue(self, usr):
         '''async io function for adding tasks to account age queue.'''
-        if (user.name not in self.aa_check_in_progress):
-            self.aa_check_in_progress.add(user.name)
+        if (usr.bcast or usr.mod or usr.sub or usr.vip or usr.name in self.whitelist): return
 
-            print(f'added {user.name} to account age queue!')
-            self.account_age_queue.append(user)
+        if (usr.name not in self._check_in_progress):
+            self._check_in_progress.add(usr.name)
+
+            self._account_age_queue.append(usr)
 
     @dynamic_looper
     def handle_queue(self):
-#        print('[+] Starting account age queue thread.')
-        if (not self.account_age_queue):
-            return 1
+        if (not self._account_age_queue): return 1
 
-        user = self.account_age_queue.popleft()
-        threading.Thread(target=self.get_accountage, args=(user,)).start()
+        user = self._account_age_queue.popleft()
+        threading.Thread(target=self._get_accountage, args=(user,)).start()
 
-    def account_age(function_to_wrap): # pylint: disable=no-self-argument
-        def wrapper(self, user, account_age_whitelist=set()):
-            if (user.sub or user.vip or user.name in account_age_whitelist
-                    or user.name in self.Hakcbot.Spam.aa_whitelist):
-                return
+    def _account_age(self, user):
+        L.l1(f'{user.name} added to account age queue!')
+        result, vd, aa = self._get_accountage(user.name) # pylint: disable=not-callable
+        if (result is AA.ACCEPT):
+            L.l1(f'{user.name} added to account_age whitelist!')
+            self.whitelist.add(user.name)
+        elif (result is AA.DROP):
+            self.Hakcbot.Automate.flag_for_timeout.append(user.name)
+            L.l1(f'user timeout | {user.name} >> {vd} | {aa}')
+        elif (result is AA.ERROR):
+            L.l1('account age error while connecting to api.')
 
-            timeout, vd, aa = function_to_wrap(self, user.name) # pylint: disable=not-callable
-            if (timeout is None):
-                pass
-            elif (timeout):
-                self.Hakcbot.Automate.flag_for_timeout.append(user.name)
-                print(f'AA timeout | {user.name} >> {vd} | {aa}')
-            else:
-                print(f'adding {user.name} to account_age whitelist!')
-                account_age_whitelist.add(user.name)
-
-            self.aa_check_in_progress.remove(user.name)
-
-        return wrapper
+        self._check_in_progress.remove(user.name)
 
     # return True will mark for timeout, False will add to whitelist, None will check on next message due to errors
-    @account_age
-    def get_accountage(self, username):
+    def _get_accountage(self, username):
         validate_date = {
             'year' : None, 'years' : None,
             'month': None, 'months': None,
@@ -75,16 +72,19 @@ class AccountAge:
             account_age = requests.get(f'https://decapi.me/twitch/accountage/{username}?precision=7')
             account_age = account_age.text.strip('\n')
         except Exception:
-            return None, validate_date, account_age
+            return AA.ERROR, validate_date, account_age
+
+        if ('404' in account_age): return AA.ERROR, None, None
 
         account_age = account_age.split(',')
-        for time in account_age:
-            number, name = time.strip().split()
+        for t in account_age:
+            print(f'TTTTTTTTT, {t}')
+            number, name = t.strip().split()
             if (name in validate_date):
                 validate_date[name] = number
 
         for amount in validate_date.values():
             if (amount):
-                return False, validate_date, account_age
+                return AA.ACCEPT, validate_date, account_age
         else:
-            return True, validate_date, account_age
+            return AA.DROP, validate_date, account_age

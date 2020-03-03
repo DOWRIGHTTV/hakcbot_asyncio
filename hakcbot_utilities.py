@@ -6,8 +6,10 @@ import re
 import time
 import asyncio
 
+from collections import deque
+
 from hakcbot_regex import NULL
-from config import BROADCASTER
+from config import BROADCASTER, IDENT
 
 #will load json data from file, convert it to a python dict, then return as object
 def load_from_file(filename):
@@ -16,7 +18,7 @@ def load_from_file(filename):
 
     return settings
 
-def write_to_file(data, filename, folder='data'):
+def write_to_file(data, filename):
     with open(f'{filename}', 'w') as settings:
         json.dump(data, settings, indent=4)
 
@@ -42,52 +44,92 @@ def async_looper(loop_function):
             await asyncio.sleep(sleep_len)
     return wrapper
 
+def level(lvl):
+    def decorator(_):
+        @classmethod
+        def wrapper(cls, *args):
+            if (lvl <= cls._LEVEL): # pylint: disable=no-member
+                cls.log(*args) # pylint: disable=no-member
+        return wrapper
+    return decorator
+
+
+class Log:
+    _LEVEL = 2
+
+    @classmethod
+    def log(cls, message):
+        print(f'{IDENT}: {message}')
+
+    @level(0)
+    def l0(cls):
+        '''raised/caught exceptions.'''
+        pass
+
+    @level(1)
+    def l1(cls):
+        '''bot logic eg. putting command on cooldown.'''
+        pass
+
+    @level(2)
+    def l2(cls):
+        '''local generated chat messages.'''
+        pass
+
+    @level(3)
+    def l3(cls):
+        '''informational output.'''
+        pass
+
 
 class CommandStructure:
-    COMMANDS = {}
-    AUTOMATE = {}
+    _COMMANDS = {}
+    _AUTOMATE = {}
+    _SPECIAL  = {}
 
     @classmethod
     def on_cooldown(cls, c_name):
-        cd_time = cls.COMMANDS.get(c_name, None)
-        if (time.time() <= cd_time):
-            return True
+        cd_time = cls._COMMANDS.get(c_name, None)
+        if (time.time() <= cd_time): return True
 
         return False
 
     @classmethod
-    def command(cls, cmd, cd, *, auto=None):
-        cls.COMMANDS[cmd] = 0
+    def cmd(cls, cmd, cd, *, auto=None):
+        cls._COMMANDS[cmd] = 0
         if (auto):
-            cls.AUTOMATE[cmd] = auto
+            cls._AUTOMATE[cmd] = auto
         def decorator(command_function):
-            async def wrapper(*args, usr):
-                if (usr.mod or usr.name == BROADCASTER): pass # cooldown bypass
+            def wrapper(*args, usr):
+                if (usr.mod or usr.bcast): pass # cooldown bypass
                 elif cls.on_cooldown(cmd): return NULL
 
-                response = await command_function(*args)
-                return cd, (response,) # forcing tuple to ensure general compatibility
+                response = command_function(*args)
+                # making msgs an iterator for compatibility with multiple response commands.
+                return cd, (response,)
             return wrapper
         return decorator
 
     @classmethod
     def mod(cls, cmd):
-        cls.COMMANDS[cmd] = 0
+        cls._COMMANDS[cmd] = 0
         def decorator(command_function):
-            async def wrapper(*args, usr):
-                if (not usr.mod and usr.name != BROADCASTER): return NULL
+            def wrapper(*args, usr):
+                if (not usr.mod and not usr.bcast): return NULL
 
-                return None, await command_function(*args)
+                return None, command_function(*args)
             return wrapper
         return decorator
 
     @classmethod
-    def broadcaster(cls, cmd):
-        cls.COMMANDS[cmd] = 0
+    def brc(cls, cmd, *, spc=False):
+        if (spc):
+            cls._SPECIAL[cmd] = 1
+        cls._COMMANDS[cmd] = 0
         def decorator(command_function):
-            async def wrapper(*args, usr):
-                if (usr.name != BROADCASTER): return NULL
+            def wrapper(*args, usr):
+                if (not usr.bcast): return NULL
 
-                return None, await command_function(*args)
+                return None, command_function(*args)
             return wrapper
         return decorator

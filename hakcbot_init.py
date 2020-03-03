@@ -3,9 +3,9 @@
 import asyncio
 from socket import socket
 
-# pylint: disable=unused-wildcard-import
-from config import *
-from hakcbot_utilities import load_from_file
+
+from config import * # pylint: disable=unused-wildcard-import
+from hakcbot_utilities import load_from_file, Log as L
 
 
 class Init:
@@ -13,8 +13,16 @@ class Init:
         self.Hakcbot = Hakcbot
         self.Hakcbot.sock.setblocking(0)
 
+        self.connect_process = [
+            f'PASS {PASS}',
+            f'NICK {IDENT}',
+            f'JOIN #{CHANNEL}',
+            'CAP REQ :twitch.tv/tags'
+        ]
+
     async def initialize(self):
         self._load_json_data()
+        self._create_tld_set()
 
         await self._join_room()
         await self._wait_for_eol()
@@ -23,10 +31,8 @@ class Init:
         loop = asyncio.get_running_loop()
 
         await loop.sock_connect(self.Hakcbot.sock, (HOST, PORT))
-        await loop.sock_sendall(self.Hakcbot.sock, f'PASS {PASS}\r\n'.encode('utf-8'))
-        await loop.sock_sendall(self.Hakcbot.sock, f'NICK {IDENT}\r\n'.encode('utf-8'))
-        await loop.sock_sendall(self.Hakcbot.sock, f'JOIN #{CHANNEL}\r\n'.encode('utf-8'))
-        await loop.sock_sendall(self.Hakcbot.sock, 'CAP REQ :twitch.tv/tags\r\n'.encode('utf-8'))
+        for step in self.connect_process:
+            await loop.sock_sendall(self.Hakcbot.sock, f'{step}\r\n'.encode('utf-8'))
 
     async def _wait_for_eol(self):
         loop = asyncio.get_running_loop()
@@ -34,7 +40,7 @@ class Init:
             data = await loop.sock_recv(self.Hakcbot.sock, 1024)
             data = data.decode('utf-8', 'ignore').strip()
             if ('End of /NAMES list' in data):
-                print('HAKCBOT NOW CONNECTED TO INTERWEBS. PREPARE FOR CYBER WARFARE.')
+                L.l1('NOW CONNECTED TO INTERWEBS. PREPARE FOR CYBER WARFARE.')
                 break
 
     def _load_json_data(self):
@@ -42,5 +48,18 @@ class Init:
 
         self.Hakcbot.titles = stored_data['titles']
         self.Hakcbot.quotes = stored_data['quotes']
-        self.Hakcbot.whitelist = stored_data['whitelist']
-        self.Hakcbot.blacklist = stored_data['blacklist']
+        self.Hakcbot.url_whitelist = stored_data['url_whitelist']
+        self.Hakcbot.word_filter  = stored_data['word_filter']
+
+        print(
+            self.Hakcbot.titles,
+            self.Hakcbot.quotes,
+            self.Hakcbot.url_whitelist,
+            self.Hakcbot.word_filter
+        )
+
+    def _create_tld_set(self):
+        with open('TLDs') as TLDs:
+            tlds = TLDs.read().splitlines()
+
+        self.Hakcbot.domain_tlds = set(t for t in tlds if len(t) <= 6 and not t.startswith('#'))
