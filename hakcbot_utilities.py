@@ -59,25 +59,25 @@ class Log:
 
     @classmethod
     def log(cls, message):
-        print(f'{IDENT}: {message}')
+        print(f'{IDENT}: {message}' if ':' not in message else message)
 
     @level(0)
-    def l0(cls):
+    def l0(cls): # pylint: disable=no-self-argument
         '''raised/caught exceptions.'''
         pass
 
     @level(1)
-    def l1(cls):
+    def l1(cls): # pylint: disable=no-self-argument
         '''bot logic eg. putting command on cooldown.'''
         pass
 
     @level(2)
-    def l2(cls):
+    def l2(cls): # pylint: disable=no-self-argument
         '''local generated chat messages.'''
         pass
 
     @level(3)
-    def l3(cls):
+    def l3(cls): # pylint: disable=no-self-argument
         '''informational output.'''
         pass
 
@@ -103,10 +103,13 @@ class CommandStructure:
             def wrapper(*args, usr):
                 if (usr.mod or usr.bcast): pass # cooldown bypass
                 elif cls.on_cooldown(cmd): return NULL
-
-                response = command_function(*args)
-                # making msgs an iterator for compatibility with multiple response commands.
-                return cd, (response,)
+                try:
+                    response = command_function(*args)
+                except TypeError:
+                    return NULL
+                else:
+                    # making msgs an iterator for compatibility with multiple response commands.
+                    return cd, (response,)
             return wrapper
         return decorator
 

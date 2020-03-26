@@ -84,12 +84,18 @@ class Commands(cs):
 #   NON STANDARD COMMANDS
 # ========================
 
-    @cs.cmd('title', 3)
-    def title(self, usr):
-        title = self.Hakcbot.titles.get(usr, None)
-        if (not title): return None
+    @cs.cmd('title', 1)
+    def title(self, usr=None):
+        if (not usr):
+            return 'T1 - call title("user") to query the user title. T2 - when user first speaks in chat \
+                their title will be announced in chat. T3 - when user joins chat, their title will be \
+                announced in chat. Title will be selected by me and can be purchased with hacker points. \
+                T2/T3 is not currently active.'
 
-        return f'{usr}, {title}.'
+        title = self.Hakcbot.titles.get(usr, None)
+        if (not title): return f'{usr} is not named in the hakcerdom.'
+
+        return f'{usr}, the {title}.'
 
     @cs.cmd('quote', 3)
     def quote(self, num):
@@ -154,25 +160,25 @@ class Commands(cs):
     def modifytitle(self, name, title, action='1'):
         '''will create a title in memory for the sent in user. addtitle(viewer, 'best viewer n/a')'''
         if (not action.isdigit() or int(action) not in [0,1,2]): return NULL
-        if (not title and action != '2'): return 'title required for this action.', None
+        if (not title and action != '0'): return 'title required for this action.', None
 
-        action = AK(int(action))
+        action, title = AK(int(action)), title.strip('"').strip("'")
         ALREADY_EXISTS = self.Hakcbot.titles.get(name, None)
         if (action is AK.MOD):
             if (not ALREADY_EXISTS): return f'{name} has no title to modify.', None
-            message = f'{name} has be given the new title of the {title}'
+            message = f'{name} is now known as the {title}, formerly the {ALREADY_EXISTS}'
 
         elif (action is AK.DEL):
             if (not ALREADY_EXISTS): return f'{name} has no title to remove.', None
-            message = f'{name} is no longer known as the {title}'
+            message = f'{name} is no longer known as the {ALREADY_EXISTS}'
 
         elif (ALREADY_EXISTS):
-            message = f'{name} is already know as the {ALREADY_EXISTS}. modify action required.'
+            return f'{name} is already known as the {ALREADY_EXISTS}. modify action required.', None
 
         elif (action is AK.ADD):
             message = f'{name} is now known as the {title}'
 
         self.Hakcbot.Execute.adjust_titles(
-            name, title.strip('"').strip("'"), action=action)
+            name, title, action=action)
 
         return message, None

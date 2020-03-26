@@ -40,7 +40,7 @@ class Init:
             data = await loop.sock_recv(self.Hakcbot.sock, 1024)
             data = data.decode('utf-8', 'ignore').strip()
             if ('End of /NAMES list' in data):
-                L.l1('NOW CONNECTED TO INTERWEBS. PREPARE FOR CYBER WARFARE.')
+                L.l1('hakcbot: NOW CONNECTED TO INTERWEBS. PREPARE FOR CYBER WARFARE.')
                 break
 
     def _load_json_data(self):
@@ -50,13 +50,6 @@ class Init:
         self.Hakcbot.quotes = stored_data['quotes']
         self.Hakcbot.url_whitelist = stored_data['url_whitelist']
         self.Hakcbot.word_filter  = stored_data['word_filter']
-
-        print(
-            self.Hakcbot.titles,
-            self.Hakcbot.quotes,
-            self.Hakcbot.url_whitelist,
-            self.Hakcbot.word_filter
-        )
 
     def _create_tld_set(self):
         with open('TLDs') as TLDs:

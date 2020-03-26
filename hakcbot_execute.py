@@ -44,11 +44,11 @@ class Execute:
     def adjust_whitelist(self, url, action=AK.ADD):
         if (action is AK.ADD):
             self.Hakcbot.url_whitelist.append(url.lower())
-            L.l1('{IDENT}: added {url} to whitelist')
+            L.l1(f'added {url} to whitelist')
 
         elif (action is AK.DEL):
             self.Hakcbot.url_whitelist.pop(url.lower(), None)
-            L.l1(f'{IDENT}: removed {url} from whitelist')
+            L.l1(f'removed {url} from whitelist')
 
         self.Hakcbot.Threads.add_file_task('url_whitelist')
 
@@ -60,16 +60,16 @@ class Execute:
     def adjust_titles(self, name, title, *, action=AK.ADD):
         if (action is AK.ADD):
             self.Hakcbot.titles[name] = title
-            L.l1(f'{IDENT}: added title for {name}, the {title}.')
+            L.l1(f'added title for {name}, the {title}.')
 
         elif (action is AK.MOD):
             old_title = self.Hakcbot.titles.get(name)
             self.Hakcbot.titles[name] = title
-            L.l1(f'{IDENT}: updated title for {name}, the {title} formerly the {old_title}.')
+            L.l1(f'updated title for {name}, the {title} formerly the {old_title}.')
 
         elif (action is AK.DEL):
             self.Hakcbot.titles.pop(name, None)
-            L.l1(f'{IDENT}: removed title for {name}, the {title}.')
+            L.l1(f'removed title for {name}, the {title}.')
 
         self.Hakcbot.Threads.add_file_task('titles')
 
@@ -107,7 +107,8 @@ class Execute:
         args = args.split(',')
         L.l3(f'pre args filter | {args}')
         for arg in args:
-            title = self._get_title(arg.strip())
+            arg = arg.strip()
+            title = self._get_title(arg)
             if (title): continue
             for l in arg:
                 if (not l.isalnum()): return NULL

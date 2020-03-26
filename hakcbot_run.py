@@ -101,7 +101,7 @@ class Hakcbot:
         for msg in msgs:
             # ensuring empty returns to do not get sent over irc
             if not msg: continue
-            L.l2(f'{IDENT}: {msg}')
+            L.l2(msg)
             await loop.sock_sendall(
                 self.sock, f'PRIVMSG #{CHANNEL} :{msg}\r\n'.encode('utf-8')
             )

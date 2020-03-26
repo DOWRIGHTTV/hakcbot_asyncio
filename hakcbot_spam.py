@@ -5,7 +5,7 @@ import time
 import traceback
 import asyncio
 
-from config import CHANNEL, BROADCASTER, IDENT # pylint: disable=no-name-in-module
+from config import CHANNEL, BROADCASTER # pylint: disable=no-name-in-module
 from hakcbot_regex import * # pylint: disable=unused-wildcard-import
 from hakcbot_utilities import load_from_file, write_to_file, Log as L
 
