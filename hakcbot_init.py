@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
+import os
 import asyncio
 from socket import socket
-
 
 from config import * # pylint: disable=unused-wildcard-import
 from hakcbot_utilities import load_from_file, Log as L
@@ -39,6 +39,9 @@ class Init:
         while True:
             data = await loop.sock_recv(self.Hakcbot.sock, 1024)
             data = data.decode('utf-8', 'ignore').strip()
+            if ('authentication failed' in data):
+                L.l0('Authentication failure!')
+                os._exit(1)
             if ('End of /NAMES list' in data):
                 L.l1('hakcbot: NOW CONNECTED TO INTERWEBS. PREPARE FOR CYBER WARFARE.')
                 break
@@ -49,10 +52,10 @@ class Init:
         self.Hakcbot.titles = stored_data['titles']
         self.Hakcbot.quotes = stored_data['quotes']
         self.Hakcbot.url_whitelist = stored_data['url_whitelist']
-        self.Hakcbot.word_filter  = stored_data['word_filter']
+        self.Hakcbot.word_filter   = stored_data['word_filter']
 
     def _create_tld_set(self):
         with open('TLDs') as TLDs:
             tlds = TLDs.read().splitlines()
 
-        self.Hakcbot.domain_tlds = set(t for t in tlds if len(t) <= 6 and not t.startswith('#'))
+        self.Hakcbot.domain_tlds = set(t.lower() for t in tlds if len(t) <= 6 and not t.startswith('#'))

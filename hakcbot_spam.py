@@ -83,7 +83,7 @@ class Spam:
             tags = re.findall(USER_TAGS, self._line)[0]
             msg  = re.findall(MESSAGE, self._line)[0].split(':', 2)
             username = msg[1].split('!')[0]
-            message  = msg[2]
+            message  = msg[2].lower() # converting to lower to prevent issues with string matching
         except Exception as E:
             L.l0(f'Parse Error: {E}')
             return E
