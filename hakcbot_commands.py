@@ -158,7 +158,7 @@ class Commands(cs):
 
     @cs.brc('modifytitle', spc=True)
     def modifytitle(self, name, title, action='1'):
-        '''will create a title in memory for the sent in user. addtitle(viewer, 'best viewer n/a')'''
+        '''will create a title in memory for the sent in user. modifytitle(viewer, 'best viewer n/a', action)'''
         if (not action.isdigit() or int(action) not in [0,1,2]): return NULL
         if (not title and action != '0'): return 'title required for this action.', None
 

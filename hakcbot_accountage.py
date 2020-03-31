@@ -27,7 +27,7 @@ class AccountAge:
 
     def start(self):
         L.l1('[+] Starting account age queue thread.')
-        threading.Thread(target=self.handle_queue).start()
+        threading.Thread(target=self._handle_queue).start()
 
     def add_to_queue(self, usr):
         '''async io function for adding tasks to account age queue.'''
@@ -39,15 +39,15 @@ class AccountAge:
             self._account_age_queue.append(usr)
 
     @dynamic_looper
-    def handle_queue(self):
+    def _handle_queue(self):
         if (not self._account_age_queue): return 1
 
         user = self._account_age_queue.popleft()
-        threading.Thread(target=self._get_accountage, args=(user,)).start()
+        threading.Thread(target=self._account_age, args=(user,)).start()
 
     def _account_age(self, user):
         L.l1(f'{user.name} added to account age queue!')
-        result, vd, aa = self._get_accountage(user.name) # pylint: disable=not-callable
+        result, vd, aa = self._get_accountage(user.name)
         if (result is AA.ACCEPT):
             L.l1(f'{user.name} added to account_age whitelist!')
             self.whitelist.add(user.name)
@@ -78,7 +78,6 @@ class AccountAge:
 
         account_age = account_age.split(',')
         for t in account_age:
-            print(f'TTTTTTTTT, {t}')
             number, name = t.strip().split()
             if (name in validate_date):
                 validate_date[name] = number
