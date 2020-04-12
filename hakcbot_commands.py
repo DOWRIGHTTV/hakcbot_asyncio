@@ -162,9 +162,9 @@ class Commands(cs):
         if (lvl in vl):
             L.LEVEL = int(lvl)
         else:
-            return f'Log level must be a digit between {vl[0]}-{vl[-1]}.'
+            return f'Log level must be a digit between {vl[0]}-{vl[-1]}.', None
 
-        return f'Log level changed to {lvl}.'
+        return f'Log level changed to {lvl}.', None
 
     @cs.brc('modifytitle', spc=True)
     def modifytitle(self, name, title, action='1'):
