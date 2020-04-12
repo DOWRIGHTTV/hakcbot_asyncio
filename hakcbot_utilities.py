@@ -45,7 +45,6 @@ def async_looper(loop_function):
     return wrapper
 
 def level(lvl):
-    Log.valid_levels.append(lvl)
     def decorator(_):
         @classmethod
         def wrapper(cls, *args):
@@ -57,7 +56,7 @@ def level(lvl):
 
 class Log:
     LEVEL = 2
-    valid_levels = []
+    valid_levels = [str(i) for i in range(4)]
 
     @classmethod
     def log(cls, message):

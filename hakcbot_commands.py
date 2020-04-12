@@ -159,8 +159,8 @@ class Commands(cs):
     @cs.brc('loglevel')
     def loglevel(self, lvl):
         vl = L.valid_levels
-        if (lvl.isdigit() and int(lvl) in vl):
-            L.LEVEL = lvl
+        if (lvl in vl):
+            L.LEVEL = int(lvl)
         else:
             return f'Log level must be a digit between {vl[0]}-{vl[-1]}.'
 
