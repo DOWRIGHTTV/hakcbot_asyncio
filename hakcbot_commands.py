@@ -9,7 +9,7 @@ import requests
 from hakcbot_regex import NULL, AK
 
 from config import BROADCASTER
-from hakcbot_utilities import CommandStructure as cs
+from hakcbot_utilities import Log as L, CommandStructure as cs
 
 
 class Commands(cs):
@@ -168,6 +168,16 @@ class Commands(cs):
 # =======================
 #   BROADCASTER COMMANDS
 # =======================
+
+    @cs.brc('loglevel')
+    def loglevel(self, lvl):
+        vl = L.valid_levels
+        if (lvl in vl):
+            L.LEVEL = int(lvl)
+        else:
+            return f'Log level must be a digit between {vl[0]}-{vl[-1]}.', None
+
+        return f'Log level changed to {lvl}.', None
 
     @cs.brc('modifytitle', spc=True)
     def modifytitle(self, name, title, action='1'):

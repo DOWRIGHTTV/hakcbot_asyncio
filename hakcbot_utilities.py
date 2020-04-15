@@ -48,14 +48,15 @@ def level(lvl):
     def decorator(_):
         @classmethod
         def wrapper(cls, *args):
-            if (lvl <= cls._LEVEL): # pylint: disable=no-member
+            if (lvl <= cls.LEVEL): # pylint: disable=no-member
                 cls.log(*args) # pylint: disable=no-member
         return wrapper
     return decorator
 
 
 class Log:
-    _LEVEL = 2
+    LEVEL = 2
+    valid_levels = [str(i) for i in range(4)]
 
     @classmethod
     def log(cls, message):

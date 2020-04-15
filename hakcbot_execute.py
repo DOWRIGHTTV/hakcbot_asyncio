@@ -111,6 +111,8 @@ class Execute:
             title = self._get_title(arg)
             if (title): continue
             for l in arg:
-                if (not l.isalnum()): return NULL
+                if (not l.isalnum() and l != '_'):
+                    L.l3(f'{l} is not a valid command string.')
+                    return NULL
 
         return cmd, tuple(a.strip() for a in args if a)
