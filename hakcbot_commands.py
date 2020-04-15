@@ -104,7 +104,7 @@ class Commands(cs):
                 T2/T3 is not currently active.'
 
         try:
-            title = self.Hakcbot[usr]['title']
+            title = self.Hakcbot.titles[usr]['title']
         except KeyError:
             return f'{usr} is not named in the hakcerdom.'
 
