@@ -126,7 +126,7 @@ class Hakcbot:
         loop = asyncio.get_running_loop()
         for msg in msgs:
             # ensuring empty returns to do not get sent over irc
-            if msg: continue
+            if (not msg): continue
 
             L.l2(msg)
             await loop.sock_sendall(
