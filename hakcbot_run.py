@@ -5,7 +5,7 @@ import requests
 import time
 import traceback
 
-from config import *
+from config import * # pylint: disable=unused-wildcard-import
 from socket import socket
 from collections import deque, namedtuple
 
@@ -16,7 +16,7 @@ from hakcbot_commands import Commands
 from hakcbot_accountage import AccountAge
 
 from hakcbot_regex import USER_TUPLE
-from hakcbot_utilities import dynamic_looper, async_looper, CommandStructure as cs
+from hakcbot_utilities import dynamic_looper, async_looper
 from hakcbot_utilities import load_from_file, write_to_file, Log as L
 
 
@@ -36,6 +36,8 @@ class Hakcbot:
         self.linecount = 0
         self.last_message = 0
         self.uptime_message = 'hakbot is still initializing! try again in a bit.'
+
+        self.announced_titles = set()
 
     def start(self):
         self.Threads.start()
@@ -89,6 +91,24 @@ class Hakcbot:
         # placeholder for when i want to track joins/ see if a user joins
         elif ('JOIN' in data): pass
 
+        # probably a bunk ass message, not sure????? should protect higher tier titles for now.
+        else:
+            return
+
+        return
+        ### FUTURE USE - FOR T2 TITLES ###
+        try:
+            titled_user = self.titles[user] # pylint: disable=no-member
+        except KeyError:
+            pass
+        else:
+            tier = titled_user['tier']
+            if (tier == 2 and user not in self.announced_titles):
+                title = titled_user['title']
+                self.announced_titles.add(user, title)
+
+                await self.announce_title(user, title)
+
     async def hakc_automation(self):
         L.l1('[+] Starting automated command process.')
         await asyncio.gather(
@@ -96,11 +116,18 @@ class Hakcbot:
             self.Automate.timeout(),
             *[self.Automate.timers(k, v) for k,v in self.Commands._AUTOMATE.items()])
 
+    async def announce_title(self, user, title):
+        # message needs to be iterable for compatibility with commands.
+        message = [f'attention! {user}, the {title}, has spoken.']
+
+        await self.send_message(message)
+
     async def send_message(self, *msgs):
         loop = asyncio.get_running_loop()
         for msg in msgs:
             # ensuring empty returns to do not get sent over irc
-            if not msg: continue
+            if msg: continue
+
             L.l2(msg)
             await loop.sock_sendall(
                 self.sock, f'PRIVMSG #{CHANNEL} :{msg}\r\n'.encode('utf-8')
@@ -151,6 +178,8 @@ class Threads:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
+        self._last_status = None
+
         self._config_update_queue = deque()
 
     def start(self):
@@ -187,6 +216,15 @@ class Threads:
             else:
                 self.Hakcbot.online = True
                 self.Hakcbot.uptime_message = f'DOWRIGHT has been live for {uptime}'
+
+        if (self._last_status != self.Hakcbot.online):
+            self._last_status = self.Hakcbot.online
+
+            # resetting tricho count and title announcements every stream
+            if (self.Hakcbot.online):
+                self.Hakcbot.Commands.tricho_count = 0
+
+                self.Hakcbot.announced_titles.clear()
 
         return 90
 

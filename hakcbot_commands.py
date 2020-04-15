@@ -17,6 +17,8 @@ class Commands(cs):
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
+        self.tricho_count = 0
+
 # ====================
 #   STANDARD COMMANDS
 # ====================
@@ -84,6 +86,15 @@ class Commands(cs):
 #   NON STANDARD COMMANDS
 # ========================
 
+    @cs.cmd('tricho', 1)
+    def tricho(self, count=None):
+        if (not count):
+            return f'trichotillomania stream count: {self.tricho_count}'
+
+        self.tricho_count += 1
+        return f'trichotillomania incremented, current: {self.tricho_count}'
+
+    # TODO: make "self" argument return title of user that called
     @cs.cmd('title', 1)
     def title(self, usr=None):
         if (not usr):
@@ -92,8 +103,10 @@ class Commands(cs):
                 announced in chat. Title will be selected by me and can be purchased with hacker points. \
                 T2/T3 is not currently active.'
 
-        title = self.Hakcbot.titles.get(usr, None)
-        if (not title): return f'{usr} is not named in the hakcerdom.'
+        try:
+            title = self.Hakcbot[usr]['title']
+        except KeyError:
+            return f'{usr} is not named in the hakcerdom.'
 
         return f'{usr}, the {title}.'
 
