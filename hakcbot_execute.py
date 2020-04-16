@@ -57,15 +57,30 @@ class Execute:
         config = load_from_file('config.json')
         self.blacklist = set(config['blacklist'])
 
-    def adjust_titles(self, name, title, *, action=AK.ADD):
+    def adjust_titles(self, name, title, tier, *, action=AK.ADD):
         if (action is AK.ADD):
-            self.Hakcbot.titles[name] = title
+            # default to one if not specified. did not want to make kwarg default 1 though
+            # to not conflict with updates.
+            if (not tier):
+                tier = 1
+
+            self.Hakcbot.titles[name] = {
+                'tier': tier,
+                'title': title
+            }
             L.l1(f'added title for {name}, the {title}.')
 
         elif (action is AK.MOD):
             old_title = self.Hakcbot.titles.get(name)
-            self.Hakcbot.titles[name] = title
-            L.l1(f'updated title for {name}, the {title} formerly the {old_title}.')
+            # if tier is not defined, we will grab current user tier.
+            if (not tier):
+                tier = self.Hakcbot.titles[name]['tier']
+
+            self.Hakcbot.titles[name] = {
+                'tier': tier,
+                'title': title
+            }
+            L.l1(f'updated tier {tier} title for {name}, the {title} formerly the {old_title}.')
 
         elif (action is AK.DEL):
             self.Hakcbot.titles.pop(name, None)

@@ -180,12 +180,13 @@ class Commands(cs):
         return f'Log level changed to {lvl}.', None
 
     @cs.brc('modifytitle', spc=True)
-    def modifytitle(self, name, title, action='1'):
+    def modifytitle(self, name, title, tier='0', action='1'):
         '''will create a title in memory for the sent in user. modifytitle(viewer, 'best viewer n/a', action)'''
         if (not action.isdigit() or int(action) not in [0,1,2]): return NULL
+        if (not tier.isdigit() or int(action) not in [0,1,2]): return NULL
         if (not title and action != '0'): return 'title required for this action.', None
 
-        action, title = AK(int(action)), title.strip('"').strip("'")
+        action, tier, title = AK(int(action)), int(tier), title.strip('"').strip("'")
         ALREADY_EXISTS = self.Hakcbot.titles.get(name, None)
         if (action is AK.MOD):
             if (not ALREADY_EXISTS): return f'{name} has no title to modify.', None
@@ -202,6 +203,6 @@ class Commands(cs):
             message = f'{name} is now known as the {title}'
 
         self.Hakcbot.Execute.adjust_titles(
-            name, title, action=action)
+            name, title, tier, action=action)
 
         return message, None
