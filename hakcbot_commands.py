@@ -156,19 +156,21 @@ class Commands(cs):
         response = f'{usr}, your account age block has been lifted. chat away!'
         return message, response
 
-    # TODO: any command that convert digit to enum will break if the digit/int is not present in the enum.
     @cs.mod('urlwl', spc=True)
-    def urlwl(self, url, action=AK.ADD):
-        if (not action.isdigit()): return NULL
-
-        url, action = url.lower(), AK(int(action))
-        error = self.Hakcbot.Execute.adjust_whitelist(url, action=action)
-        if (error):
-            message = error
-        elif (action is AK.ADD):
-            message = f'{url} added to the url whitelist.'
-        elif (action is AK.DEL):
-            message = f'{url} removed from the url whitelist.'
+    def urlwl(self, url, action=1):
+        try:
+            action = AK(int(action))
+        except:
+            message = f'action={action} is not a valid argument.'
+        else:
+            url = url.lower()
+            error = self.Hakcbot.Execute.adjust_whitelist(url, action=action)
+            if (error):
+                message = error
+            elif (action is AK.ADD):
+                message = f'{url} added to the url whitelist.'
+            elif (action is AK.DEL):
+                message = f'{url} removed from the url whitelist.'
 
         return message, None
 
