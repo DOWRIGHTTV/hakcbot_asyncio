@@ -96,8 +96,9 @@ class Hakcbot:
             return
 
         ### FUTURE USE - FOR T2 TITLES ###
+        if (not user): return
         try:
-            titled_user = self.titles[user] # pylint: disable=no-member
+            titled_user = self.titles[user.name] # pylint: disable=no-member
         except KeyError:
             pass
         else:
