@@ -73,7 +73,7 @@ class Hakcbot:
         await self.main()
 
     async def _message_handler(self, data):
-        loop = asyncio.get_running_loop()
+        loop, user = asyncio.get_running_loop(), None
         if (data == 'PING :tmi.twitch.tv'):
             await loop.sock_sendall(self.sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
 

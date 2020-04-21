@@ -89,11 +89,14 @@ class Execute:
         self.Hakcbot.Threads.add_file_task('titles')
 
     def _special_check(self, usr, msg):
+        L.l4('special command parse started.')
         if (not usr.bcast or not usr.mod): return msg
 
+        L.l4('bcaster or mod identified. checking for command match.')
         join_msg = ' '.join(msg)
         if not re.fullmatch(VALID_CMD, join_msg): return msg
 
+        L.l4('valid command match. cross referencing special commands list.')
         cmd = re.findall(CMD, join_msg)[0]
         if cmd not in self.Hakcbot.Commands._SPECIAL: return msg
 

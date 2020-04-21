@@ -56,30 +56,35 @@ def level(lvl):
 
 class Log:
     LEVEL = 2
-    valid_levels = [str(i) for i in range(4)]
+    valid_levels = [str(i) for i in range(5)]
 
     @classmethod
     def log(cls, message):
         print(f'{IDENT}: {message}' if ':' not in message else message)
 
     @level(0)
-    def l0(cls): # pylint: disable=no-self-argument
+    def l0(self):
         '''raised/caught exceptions.'''
         pass
 
     @level(1)
-    def l1(cls): # pylint: disable=no-self-argument
+    def l1(self):
         '''bot logic eg. putting command on cooldown.'''
         pass
 
     @level(2)
-    def l2(cls): # pylint: disable=no-self-argument
+    def l2(self):
         '''local generated chat messages.'''
         pass
 
     @level(3)
-    def l3(cls): # pylint: disable=no-self-argument
+    def l3(self):
         '''informational output.'''
+        pass
+
+    @level(4)
+    def l4(self):
+        '''debug output.'''
         pass
 
 

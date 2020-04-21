@@ -82,7 +82,7 @@ class Commands(cs):
         ltime = time.strftime('%H:%M:%S', time.localtime())
         return f"{BROADCASTER}'s time is {ltime}"
 
-    @cs.cmd('time', THREE_MIN)
+    @cs.cmd('laptop', THREE_MIN)
     def laptop(self):
         return 'i use this laptop --> dell e7250 12.5in, i5-5300U 2.3ghz, 8g ram, 256 ssd'
 
