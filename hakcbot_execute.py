@@ -25,6 +25,7 @@ class Execute:
     async def task_handler(self, user, message):
         # if user is broadcaster and the join of words matches a valid command, the return will be the join.
         # otherwise the original message will be returned
+        self._special_command = False # NOTE: this can be done better prob.
         message = self._special_check(user, message)
         for word in message:
             cmd, args = self._get_command(word)
@@ -90,7 +91,7 @@ class Execute:
 
     def _special_check(self, usr, msg):
         L.l4('special command parse started.')
-        if (not usr.bcast or not usr.mod): return msg
+        if (not usr.bcast and not usr.mod): return msg
 
         L.l4('bcaster or mod identified. checking for command match.')
         join_msg = ' '.join(msg)
@@ -101,6 +102,8 @@ class Execute:
         if cmd not in self.Hakcbot.Commands._SPECIAL: return msg
 
         L.l3(f'returning special command {join_msg}')
+
+        self._special_command = True
         return [join_msg]
 
     def _get_title(self, arg):
@@ -126,8 +129,12 @@ class Execute:
             title = self._get_title(arg)
             if (title): continue
             for l in arg:
+                # allow special commands to have urls. required for url whitelist.
+                if ('.' in l and self._special_command): continue
+                # ensuring users cannot abuse commands to bypass secuirty control. underscores are fine because they pose
+                # no (known) threat and are commonly used in usernames.
                 if (not l.isalnum() and l != '_'):
-                    L.l3(f'{l} is not a valid command string.')
+                    L.l3(f'"{l}" is not a valid command string.')
                     return NULL
 
         return cmd, tuple(a.strip() for a in args if a)
