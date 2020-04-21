@@ -158,7 +158,7 @@ class Commands(cs):
 
     # TODO: any command that convert digit to enum will break if the digit/int is not present in the enum.
     @cs.mod('urlwl', spc=True)
-    def urlwl(self, url, action):
+    def urlwl(self, url, action=AK.ADD):
         if (not action.isdigit()): return NULL
 
         url, action = url.lower(), AK(int(action))
