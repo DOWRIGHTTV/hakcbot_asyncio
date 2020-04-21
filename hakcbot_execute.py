@@ -43,15 +43,22 @@ class Execute:
                 await self.Hakcbot.send_message(*response)
 
     def adjust_whitelist(self, url, action=AK.ADD):
+        current_whitelist = self.Hakcbot.url_whitelist
         if (action is AK.ADD):
-            self.Hakcbot.url_whitelist.append(url.lower())
+            if (url in current_whitelist):
+                return f'{url} already actively whitelisted.'
+
+            current_whitelist.add(url)
             L.l1(f'added {url} to whitelist')
 
         elif (action is AK.DEL):
-            self.Hakcbot.url_whitelist.pop(url.lower(), None)
-            L.l1(f'removed {url} from whitelist')
+            try:
+                current_whitelist.remove(url)
+            except KeyError:
+                return f'{url} does not have an active whitelist.'
 
-        self.Hakcbot.Threads.add_file_task('url_whitelist')
+            L.l1(f'removed {url} from whitelist')
+            self.Hakcbot.Threads.add_file_task('url_whitelist')
 
     # NOTE: currently unused
     def adjust_blacklist(self, url=None, action=None):
