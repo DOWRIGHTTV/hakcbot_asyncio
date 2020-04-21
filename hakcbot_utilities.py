@@ -115,8 +115,10 @@ class CommandStructure:
         return decorator
 
     @classmethod
-    def mod(cls, cmd):
+    def mod(cls, cmd, *, spc=False):
         cls._COMMANDS[cmd] = 0
+        if (spc):
+            cls._SPECIAL[cmd] = 1
         def decorator(command_function):
             def wrapper(*args, usr):
                 if (not usr.mod and not usr.bcast): return NULL

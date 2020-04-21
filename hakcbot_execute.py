@@ -89,7 +89,7 @@ class Execute:
         self.Hakcbot.Threads.add_file_task('titles')
 
     def _special_check(self, usr, msg):
-        if (not usr.bcast): return msg
+        if (not usr.bcast or not usr.mod): return msg
 
         join_msg = ' '.join(msg)
         if not re.fullmatch(VALID_CMD, join_msg): return msg
@@ -115,9 +115,6 @@ class Execute:
         if (cmd not in self.Hakcbot.Commands._COMMANDS): return NULL
 
         args = re.findall(ARG, word)[0]
-        for l in cmd:
-            if (not l.isalnum()): return NULL
-
         if (args.startswith(',') or args.endswith(',')): return NULL
         args = args.split(',')
         L.l3(f'pre args filter | {args}')

@@ -15,7 +15,7 @@ from hakcbot_execute import Execute
 from hakcbot_commands import Commands
 from hakcbot_accountage import AccountAge
 
-from hakcbot_regex import USER_TUPLE
+from hakcbot_regex import USER_TUPLE, FIVE_MIN
 from hakcbot_utilities import dynamic_looper, async_looper
 from hakcbot_utilities import load_from_file, write_to_file, Log as L
 
@@ -146,10 +146,10 @@ class Automate:
     @async_looper
     async def reset_line_count(self):
         time_elapsed = time.time() - self.Hakcbot.last_message
-        if (time_elapsed > 300):
+        if (time_elapsed > FIVE_MIN):
             self.Hakcbot.linecount = 0
 
-        return 300
+        return FIVE_MIN
 
     @async_looper
     async def timers(self, cmd, timer):
