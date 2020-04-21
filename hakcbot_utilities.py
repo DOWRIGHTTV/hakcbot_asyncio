@@ -13,12 +13,18 @@ from config import BROADCASTER, IDENT
 
 #will load json data from file, convert it to a python dict, then return as object
 def load_from_file(filename):
+    if not filename.endswith('.json'):
+        filename += '.json'
+
     with open(f'{filename}', 'r') as settings:
         settings = json.load(settings)
 
     return settings
 
 def write_to_file(data, filename):
+    if not filename.endswith('.json'):
+        filename += '.json'
+
     with open(f'{filename}', 'w') as settings:
         json.dump(data, settings, indent=4)
 
