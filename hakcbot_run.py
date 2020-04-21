@@ -195,11 +195,16 @@ class Threads:
 
         obj_name = self._config_update_queue.popleft()
 
-        config = load_from_file('config.json')
+        config = load_from_file('config')
         if (obj_name not in config): return None
 
-        config[obj_name] = getattr(self.Hakcbot, obj_name)
-        write_to_file(config, 'config.json')
+        updated_attribute = getattr(self.Hakcbot, obj_name)
+        if isinstance(updated_attribute, set):
+            updated_attribute = list(updated_attribute)
+
+        config[obj_name] = updated_attribute
+
+        write_to_file(config, 'config')
 
     @dynamic_looper
     def _uptime(self):
