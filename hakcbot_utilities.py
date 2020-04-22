@@ -100,9 +100,14 @@ def queue(name, *, func_type='thread'):
             async def wrapper(*args):
                 Log.l1(f'{name}/async-queue started.')
                 while True:
-                    job_wait()
+                    notified = job_wait(timeout=0)
+                    if (not notified):
+                        asyncio.sleep(2)
+                        continue
+
                     # clearing job notification
                     job_clear()
+
                     # processing all available jobs
                     while queue:
                         try:
@@ -110,7 +115,7 @@ def queue(name, *, func_type='thread'):
                             await func(*args, job)
                         except Exception as E:
                             Log.l0(f'error while processing a {name}/async-queue started job. | {E}')
-                            time.sleep(.001)
+                            asyncio.sleep(.1)
 
         else:
             raise ValueError(f'{func_type} if not a valid. must be thread, async.')
