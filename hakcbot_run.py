@@ -105,8 +105,9 @@ class Hakcbot:
             tier = titled_user['tier']
             if (tier == 2 and user not in self.announced_titles):
                 title = titled_user['title']
-                self.announced_titles.add(user, title)
-
+                # already announced users - type > set()
+                self.announced_titles.add(user)
+                # announcing the user to chat
                 await self.announce_title(user, title)
 
     async def hakc_automation(self):
