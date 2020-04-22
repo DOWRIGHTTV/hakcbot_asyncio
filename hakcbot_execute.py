@@ -9,8 +9,8 @@ import requests
 import json
 import traceback
 
-from config import *
-from hakcbot_regex import *
+from config import * # pylint: disable=unused-wildcard-import
+from hakcbot_regex import * # pylint: disable=unused-wildcard-import
 from hakcbot_utilities import load_from_file, write_to_file
 from datetime import datetime
 from hakcbot_utilities import Log as L
@@ -119,7 +119,7 @@ class Execute:
 
     def _apply_cooldown(self, cmd, cd_len):
         L.l1(f'Putting {cmd} on cooldown.')
-        self.Hakcbot.Commands._COMMANDS[cmd] = time.time() + cd_len
+        self.Hakcbot.Commands._COMMANDS[cmd] = fast_time() + cd_len
 
     def _get_command(self, word):
         if not re.fullmatch(VALID_CMD, word): return NULL

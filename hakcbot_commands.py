@@ -167,8 +167,10 @@ class Commands(cs):
             error = self.Hakcbot.Execute.adjust_whitelist(url, action=action)
             if (error):
                 message = error
+
             elif (action is AK.ADD):
                 message = f'{url} added to the url whitelist.'
+
             elif (action is AK.DEL):
                 message = f'{url} removed from the url whitelist.'
 

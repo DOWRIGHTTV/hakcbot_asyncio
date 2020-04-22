@@ -4,6 +4,7 @@ import os
 import json
 import re
 import time
+import threading
 import asyncio
 
 from collections import deque
@@ -28,27 +29,102 @@ def write_to_file(data, filename):
     with open(f'{filename}', 'w') as settings:
         json.dump(data, settings, indent=4)
 
-def dynamic_looper(loop_function):
+def dynamic_looper(*, func_type='thread'):
     '''decorator to maintain daemon loop which will sleep for the returned integer length.
-    if no return is specified, sleep will not be called.'''
-    def wrapper(*args):
-        while True:
-            sleep_len = loop_function(*args)
-            if (not sleep_len): continue
+    if no return is specified, sleep will not be called. default func type is for threads.'''
+    def decorator(loop_function):
+        if (func_type == 'thread'):
+            def wrapper(*args):
+                while True:
+                    sleep_len = loop_function(*args)
+                    if (not sleep_len): continue
 
-            time.sleep(sleep_len)
-    return wrapper
+                    time.sleep(sleep_len)
 
-def async_looper(loop_function):
-    '''async decorator to maintain daemon loop which will sleep for the returned integer length.
-    if no return is specified, sleep will not be called.'''
-    async def wrapper(*args):
-        while True:
-            sleep_len = await loop_function(*args)
-            if (not sleep_len): continue
+        elif (func_type == 'async'):
+            async def wrapper(*args):
+                while True:
+                    sleep_len = await loop_function(*args)
+                    if (not sleep_len): continue
 
-            await asyncio.sleep(sleep_len)
-    return wrapper
+                    await asyncio.sleep(sleep_len)
+
+        else:
+            raise ValueError(f'{func_type} if not a valid. must be thread, async.')
+
+        return wrapper
+    return decorator
+
+def queue(name, *, func_type='thread'):
+    '''decorator to add custom queue mechanism for any queue handling functions. This
+    is a direct replacement for dynamic/async_looper for queues.
+
+    the func_type keyword argument will determine which wrapper gets used.
+    options: thread, async
+
+    default func type is for threads.
+
+    example:
+        @queue(Log, name='Bot', func_type='thread')
+        def some_func(job):
+            process(job)
+
+    '''
+    def decorator(func):
+
+        queue = deque()
+        queue_add = queue.append
+        queue_get = queue.popleft
+
+        job_available = threading.Event()
+        job_wait  = job_available.wait
+        job_clear = job_available.clear
+
+        if (func_type == 'thread'):
+            def wrapper(*args):
+                Log.l1(f'{name}/thread-queue started.')
+                while True:
+                    job_wait()
+                    # clearing job notification
+                    job_clear()
+                    # processing all available jobs
+                    while queue:
+                        try:
+                            job = queue_get()
+                            func(*args, job)
+                        except Exception as E:
+                            Log.l0(f'error while processing a {name}/thread-queue started job. | {E}')
+                            time.sleep(.001)
+
+        elif (func_type == 'async'):
+            async def wrapper(*args):
+                Log.l1(f'{name}/async-queue started.')
+                while True:
+                    job_wait()
+                    # clearing job notification
+                    job_clear()
+                    # processing all available jobs
+                    while queue:
+                        try:
+                            job = queue_get()
+                            await func(*args, job)
+                        except Exception as E:
+                            Log.l0(f'error while processing a {name}/async-queue started job. | {E}')
+                            time.sleep(.001)
+
+        else:
+            raise ValueError(f'{func_type} if not a valid. must be thread, async.')
+
+        def add(job):
+            '''adds job to work queue, then marks event indicating a job is available.'''
+            queue_add(job)
+            job_available.set()
+
+        wrapper.add = add
+        return wrapper
+    return decorator
+
+# LOG HANDLING #
 
 def level(lvl):
     def decorator(_):

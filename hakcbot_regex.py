@@ -8,6 +8,7 @@ from collections import namedtuple
 
 fast_time = time.time
 NULL = (None, None)
+ANNOUNCEMENT_INTERVAL = 90 * 60 # 90 minutes
 USER_TUPLE = namedtuple('user', 'name bcast mod sub vip permit timestamp')
 
 class AA(Enum):
