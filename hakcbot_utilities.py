@@ -102,7 +102,7 @@ def queue(name, *, func_type='thread'):
                 while True:
                     notified = job_wait(timeout=0)
                     if (not notified):
-                        asyncio.sleep(2)
+                        await asyncio.sleep(2)
                         continue
 
                     # clearing job notification
@@ -115,7 +115,7 @@ def queue(name, *, func_type='thread'):
                             await func(*args, job)
                         except Exception as E:
                             Log.l0(f'error while processing a {name}/async-queue started job. | {E}')
-                            asyncio.sleep(.1)
+                            await asyncio.sleep(.1)
 
         else:
             raise ValueError(f'{func_type} if not a valid. must be thread, async.')
