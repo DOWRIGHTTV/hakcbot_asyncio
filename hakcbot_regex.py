@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import re
+import time
 
 from enum import Enum
 from collections import namedtuple
 
+fast_time = time.time
 NULL = (None, None)
 USER_TUPLE = namedtuple('user', 'name bcast mod sub vip permit timestamp')
 
@@ -25,7 +27,6 @@ MOD = re.compile(r'mod=(.*?);')
 USER_TAGS = re.compile(r'@badge-info=(.*?)user-type=')
 MESSAGE   = re.compile(r'user-type=(.*)')
 TITLE = re.compile(r'(?P<quote>[\'"]).*?(?P=quote)')
-
 
 VALID_CMD = re.compile(r'(.*?)\((.*?)\)')
 CMD = re.compile(r'(.*?)\(')

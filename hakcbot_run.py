@@ -15,7 +15,7 @@ from hakcbot_execute import Execute
 from hakcbot_commands import Commands
 from hakcbot_accountage import AccountAge
 
-from hakcbot_regex import USER_TUPLE, FIVE_MIN
+from hakcbot_regex import fast_time, USER_TUPLE, FIVE_MIN
 from hakcbot_utilities import dynamic_looper, async_looper
 from hakcbot_utilities import load_from_file, write_to_file, Log as L
 
@@ -82,7 +82,7 @@ class Hakcbot:
             if (not valid_data): return
 
             self.linecount += 1
-            self.last_message = time.time()
+            self.last_message = fast_time()
             user, message = valid_data
             # function will check if already in progress before sending to the queue
             self.AccountAge.add_to_queue(user)
@@ -121,7 +121,7 @@ class Hakcbot:
         # message needs to be iterable for compatibility with commands.
         message = [f'attention! {user}, the {title}, has spoken.']
 
-        await self.send_message(message)
+        await self.send_message(*message)
 
     async def send_message(self, *msgs):
         loop = asyncio.get_running_loop()
@@ -142,12 +142,12 @@ class Automate:
         self.flag_for_timeout = deque()
         self.hakcusr = USER_TUPLE(
             'hakcbot', False, False, False,
-            False, True, time.time()
+            False, True, fast_time()
         )
 
     @async_looper
     async def reset_line_count(self):
-        time_elapsed = time.time() - self.Hakcbot.last_message
+        time_elapsed = fast_time() - self.Hakcbot.last_message
         if (time_elapsed > FIVE_MIN):
             self.Hakcbot.linecount = 0
 

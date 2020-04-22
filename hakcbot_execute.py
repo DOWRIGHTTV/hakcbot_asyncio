@@ -119,7 +119,7 @@ class Execute:
 
     def _apply_cooldown(self, cmd, cd_len):
         L.l1(f'Putting {cmd} on cooldown.')
-        self.Hakcbot.Commands._COMMANDS[cmd] = time.time() + (cd_len*60)
+        self.Hakcbot.Commands._COMMANDS[cmd] = time.time() + cd_len
 
     def _get_command(self, word):
         if not re.fullmatch(VALID_CMD, word): return NULL
