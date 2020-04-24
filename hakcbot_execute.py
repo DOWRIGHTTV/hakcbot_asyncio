@@ -65,7 +65,7 @@ class Execute:
         config = load_from_file('config.json')
         self.blacklist = set(config['blacklist'])
 
-    def adjust_titles(self, name, title, tier, *, action):
+    def adjust_titles(self, name, title, tier, action):
         if (action is AK.DEL):
             user_data = self.Hakcbot.titles.pop(name, None)
             old_title = user_data['title']
