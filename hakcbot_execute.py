@@ -90,13 +90,14 @@ class Execute:
                 message = f'{name} is now known as the {title}'
 
             elif (action is AK.MOD):
-                old_title = self.Hakcbot.titles.get(name)
+                user_data = self.Hakcbot.titles.get(name)
+                old_title = user_data['title']
                 # if tier is not defined, we will grab current user tier.
                 if (not tier):
-                    tier = self.Hakcbot.titles[name]['tier']
+                    tier = user_data['tier']
 
                 if (not title or len(title) < 5):
-                    title = self.Hakcbot.titles[name]['title']
+                    title = user_data['title']
 
                 self.Hakcbot.titles[name] = {
                     'tier': tier,
@@ -104,7 +105,10 @@ class Execute:
                 }
                 L.l1(f'updated tier {tier} title for {name}, the {title} formerly the {old_title}.')
 
-                message = f'{name} (tier {tier}) is now known as the {title}, formerly the {old_title}'
+                if (old_title == title):
+                    message = f'{name}, the {title}, is now tier {tier}'
+                else:
+                    message = f'{name} (tier {tier}) is now known as the {title}, formerly the {old_title}'
 
         self.Hakcbot.Threads.add_file_task('titles')
 
