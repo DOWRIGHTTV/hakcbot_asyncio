@@ -194,29 +194,27 @@ class Commands(cs):
         return f'Log level changed to {lvl}.', None
 
     @cs.brc('modifytitle', spc=True)
-    def modifytitle(self, name, title, tier='0', action='1'):
-        '''will create a title in memory for the sent in user. modifytitle(viewer, 'best viewer n/a', action)'''
+    def modifytitle(self, name, title, tier, action='1'):
+        '''will create a title in memory for the sent in user. modifytitle(viewer, 'best viewer n/a', tier, action)'''
         if (not action.isdigit() or int(action) not in [0,1,2]): return NULL
         if (not tier.isdigit() or int(action) not in [0,1,2]): return NULL
         if (not title and action != '0'): return 'title required for this action.', None
 
         action, tier, title = AK(int(action)), int(tier), title.strip('"').strip("'")
         ALREADY_EXISTS = self.Hakcbot.titles.get(name, None)
-        if (action is AK.MOD):
-            if (not ALREADY_EXISTS): return f'{name} has no title to modify.', None
-            message = f'{name} is now known as the {title}, formerly the {ALREADY_EXISTS}'
+        if (action is AK.MOD and not ALREADY_EXISTS):
+            return f'{name} has no title to modify.', None
 
-        elif (action is AK.DEL):
-            if (not ALREADY_EXISTS): return f'{name} has no title to remove.', None
-            message = f'{name} is no longer known as the {ALREADY_EXISTS}'
+        elif (action is AK.DEL and not ALREADY_EXISTS):
+            return f'{name} has no title to remove.', None
 
         elif (ALREADY_EXISTS):
             return f'{name} is already known as the {ALREADY_EXISTS}. modify action required.', None
 
-        elif (action is AK.ADD):
-            message = f'{name} is now known as the {title}'
+        elif (action is AK.ADD and not title):
+            return 'title is required for add call.', None
 
-        self.Hakcbot.Execute.adjust_titles(
-            name, title, tier, action=action)
+        message = self.Hakcbot.Execute.adjust_titles(
+            name, title, tier, action)
 
         return message, None

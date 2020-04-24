@@ -65,36 +65,50 @@ class Execute:
         config = load_from_file('config.json')
         self.blacklist = set(config['blacklist'])
 
-    def adjust_titles(self, name, title, tier, *, action=AK.ADD):
-        if (action is AK.ADD):
-            # default to one if not specified. did not want to make kwarg default 1 though
-            # to not conflict with updates.
-            if (not tier):
-                tier = 1
+    def adjust_titles(self, name, title, tier, *, action):
+        if (action is AK.DEL):
+            user_data = self.Hakcbot.titles.pop(name, None)
+            old_title = user_data['title']
 
-            self.Hakcbot.titles[name] = {
-                'tier': tier,
-                'title': title
-            }
-            L.l1(f'added title for {name}, the {title}.')
-
-        elif (action is AK.MOD):
-            old_title = self.Hakcbot.titles.get(name)
-            # if tier is not defined, we will grab current user tier.
-            if (not tier):
-                tier = self.Hakcbot.titles[name]['tier']
-
-            self.Hakcbot.titles[name] = {
-                'tier': tier,
-                'title': title
-            }
-            L.l1(f'updated tier {tier} title for {name}, the {title} formerly the {old_title}.')
-
-        elif (action is AK.DEL):
-            self.Hakcbot.titles.pop(name, None)
             L.l1(f'removed title for {name}, the {title}.')
 
+            message = f'{name} is no longer known as the {old_title}'
+
+        else:
+            if (action is AK.ADD):
+                # default to one if not specified. did not want to make kwarg default 1 though
+                # to not conflict with updates.
+                if (not tier):
+                    tier = 1
+
+                self.Hakcbot.titles[name] = {
+                    'tier': tier,
+                    'title': title
+                }
+                L.l1(f'added title for {name}, the {title}.')
+
+                message = f'{name} is now known as the {title}'
+
+            elif (action is AK.MOD):
+                old_title = self.Hakcbot.titles.get(name)
+                # if tier is not defined, we will grab current user tier.
+                if (not tier):
+                    tier = self.Hakcbot.titles[name]['tier']
+
+                if (not title or len(title) < 5):
+                    title = self.Hakcbot.titles[name]['title']
+
+                self.Hakcbot.titles[name] = {
+                    'tier': tier,
+                    'title': title
+                }
+                L.l1(f'updated tier {tier} title for {name}, the {title} formerly the {old_title}.')
+
+                message = f'{name} (tier {tier}) is now known as the {title}, formerly the {old_title}'
+
         self.Hakcbot.Threads.add_file_task('titles')
+
+        return message
 
     def _special_check(self, usr, msg):
         L.l4('special command parse started.')
