@@ -202,17 +202,18 @@ class Commands(cs):
 
         action, tier, title = AK(int(action)), int(tier), title.strip('"').strip("'")
         ALREADY_EXISTS = self.Hakcbot.titles.get(name, None)
-        if (action is AK.MOD and not ALREADY_EXISTS):
-            return f'{name} has no title to modify.', None
+        if (action is AK.ADD):
+            if (ALREADY_EXISTS):
+                return f'{name} is already known as the {ALREADY_EXISTS}. modify action required.', None
+            elif (not title):
+                return 'title is required for add call.', None
 
-        elif (action is AK.DEL and not ALREADY_EXISTS):
-            return f'{name} has no title to remove.', None
+        elif (not ALREADY_EXISTS):
+            if (action is AK.MOD):
+                return f'{name} has no title to modify.', None
 
-        elif (ALREADY_EXISTS):
-            return f'{name} is already known as the {ALREADY_EXISTS}. modify action required.', None
-
-        elif (action is AK.ADD and not title):
-            return 'title is required for add call.', None
+            if (action is AK.DEL):
+                return f'{name} has no title to remove.', None
 
         message = self.Hakcbot.Execute.adjust_titles(
             name, title, tier, action)
