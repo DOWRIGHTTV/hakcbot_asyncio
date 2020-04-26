@@ -134,6 +134,13 @@ class Commands(cs):
 
         return msg
 
+
+
+    @cs.cmd('congrats', 3)
+    def congrats(self, usr):
+        return f"Yo {usr}! Welcome to the team. Grab a beer and take a seat."
+
+
 # ===============
 #   MOD COMMANDS
 # ===============
