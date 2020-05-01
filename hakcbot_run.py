@@ -84,12 +84,14 @@ class Hakcbot:
             self.linecount += 1
             self.last_message = fast_time()
             user, message = valid_data
+
             # function will check if already in progress before sending to the queue
             self.AccountAge.add_to_queue(user)
             await self.Execute.task_handler(user, message)
 
         # placeholder for when i want to track joins/ see if a user joins
-        elif ('JOIN' in data): pass
+        elif ('JOIN' in data):
+            print(data)
 
         # probably a bunk ass message, not sure????? should protect higher tier titles for now.
         else:

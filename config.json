@@ -1,4 +1,8 @@
 {
+    "twitch": {
+        "host": "irc.chat.twitch.tv.",
+        "port": 6667
+    },
     "word_filter": [],
     "url_whitelist": [],
     "titles": {},

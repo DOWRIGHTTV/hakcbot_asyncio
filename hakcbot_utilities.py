@@ -9,7 +9,7 @@ import asyncio
 
 from collections import deque
 
-from hakcbot_regex import NULL
+from hakcbot_regex import NULL, fast_time, fast_sleep, afast_sleep
 from config import BROADCASTER, IDENT
 
 #will load json data from file, convert it to a python dict, then return as object
@@ -39,7 +39,7 @@ def dynamic_looper(*, func_type='thread'):
                     sleep_len = loop_function(*args)
                     if (not sleep_len): continue
 
-                    time.sleep(sleep_len)
+                    fast_sleep(sleep_len)
 
         elif (func_type == 'async'):
             async def wrapper(*args):
@@ -47,7 +47,7 @@ def dynamic_looper(*, func_type='thread'):
                     sleep_len = await loop_function(*args)
                     if (not sleep_len): continue
 
-                    await asyncio.sleep(sleep_len)
+                    await afast_sleep(sleep_len)
 
         else:
             raise ValueError(f'{func_type} if not a valid. must be thread, async.')
@@ -94,7 +94,7 @@ def queue(name, *, func_type='thread'):
                             func(*args, job)
                         except Exception as E:
                             Log.l0(f'error while processing a {name}/thread-queue started job. | {E}')
-                            time.sleep(.001)
+                            fast_sleep(.001)
 
         elif (func_type == 'async'):
             async def wrapper(*args):
@@ -102,7 +102,7 @@ def queue(name, *, func_type='thread'):
                 while True:
                     notified = job_wait(timeout=0)
                     if (not notified):
-                        await asyncio.sleep(2)
+                        await afast_sleep(1)
                         continue
 
                     # clearing job notification
@@ -115,10 +115,10 @@ def queue(name, *, func_type='thread'):
                             await func(*args, job)
                         except Exception as E:
                             Log.l0(f'error while processing a {name}/async-queue started job. | {E}')
-                            await asyncio.sleep(.1)
+                            await afast_sleep(.1)
 
         else:
-            raise ValueError(f'{func_type} if not a valid. must be thread, async.')
+            raise ValueError(f'{func_type} is not valid. must be thread, async.')
 
         def add(job):
             '''adds job to work queue, then marks event indicating a job is available.'''
@@ -183,7 +183,7 @@ class CommandStructure:
     @classmethod
     def on_cooldown(cls, c_name):
         cd_time = cls._COMMANDS.get(c_name, None)
-        if (time.time() <= cd_time): return True
+        if (fast_time() <= cd_time): return True
 
         return False
 

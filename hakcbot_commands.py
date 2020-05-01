@@ -2,13 +2,13 @@
 
 import re
 import json
-import time
 import asyncio
 import requests
 
-from hakcbot_regex import NULL, AK, ONE_MIN, THREE_MIN
+from time import strftime, localtime
 
 from config import BROADCASTER
+from hakcbot_regex import NULL, AK, ONE_MIN, THREE_MIN
 from hakcbot_utilities import Log as L, CommandStructure as cs
 
 
@@ -79,10 +79,10 @@ class Commands(cs):
 
     @cs.cmd('time', THREE_MIN)
     def time(self):
-        ltime = time.strftime('%H:%M:%S', time.localtime())
+        ltime = strftime('%H:%M:%S', localtime())
         return f"{BROADCASTER}'s time is {ltime}"
 
-    @cs.cmd('hw', 3, auto=3)
+    @cs.cmd('hw', THREE_MIN)
     def sub(self):
         return 'The current target hardware is Espressobin: --> http://espressobin.net'
 
@@ -148,9 +148,10 @@ class Commands(cs):
 
     @cs.mod('permit')
     def permit(self, usr):
-        self.Hakcbot.Spam.permit_list[usr.lower()] = time.time() + (THREE_MIN)
+        self.Hakcbot.Spam.permit_list[usr.lower()] = fast_time() + THREE_MIN
         message  = f'/untimeout {usr}'
         response = f'{usr}, you can now post links for 3 minutes.'
+
         return message, response
 
     @cs.mod('acctwl')
@@ -158,6 +159,7 @@ class Commands(cs):
         self.Hakcbot.AccountAge.whitelist.add(usr.lower())
         message  = f'/untimeout {usr}'
         response = f'{usr}, your account age block has been lifted. chat away!'
+
         return message, response
 
     @cs.mod('urlwl', spc=True)
@@ -222,6 +224,7 @@ class Commands(cs):
                 return f'{name} has no title to remove.', None
 
         message = self.Hakcbot.Execute.adjust_titles(
-            name, title, tier, action)
+            name, title, tier, action
+        )
 
         return message, None

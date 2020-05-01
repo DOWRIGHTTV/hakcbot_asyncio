@@ -37,7 +37,7 @@ class Spam:
     def _message_filter(self):
         banned_word = self._blacklisted_word
         if (banned_word):
-            message  = f'/timeout {self._user.name} {10} {banned_word}'
+            message  = f'/timeout {self._user.name} 10 {banned_word}'
             response = f'{self._user.name}, you are a bad boi and used a blacklisted word.'
 
             L.l1(f'BLOCKED || {self._user} : {banned_word}') # want to see user tuple here
@@ -48,7 +48,7 @@ class Spam:
             matches = self._is_link(url_match)
             if (not matches): return None
 
-            message  = f'/timeout {self._user.name} {10} {matches}'
+            message  = f'/timeout {self._user.name} 10 {matches}'
             response = f'{self._user.name}, ask for permission to post links.'
 
             L.l1(f'BLOCKED || {self._user} : {matches}') # want to see user tuple here
@@ -88,7 +88,7 @@ class Spam:
             L.l0(f'Parse Error: {E}')
             return E
 
-        timestamp = round(time.time())
+        timestamp = int(fast_time())
         bcast = self._check_broadcaster(username)
         mod = bool(int(re.findall(MOD, tags)[0]))
         sub = bool(int(re.findall(SUB, tags)[0]))
@@ -100,7 +100,7 @@ class Spam:
         usr_permit = self.permit_list.get(username, None)
         if (not permit and usr_permit):
             # marking user to be permitted for a link head of time
-            if (time.time() < usr_permit):
+            if (fast_time() < usr_permit):
                 permit = True
             # if expiration detected, will remove user from dict. temporary until better cleaning solution is implemented
             else:

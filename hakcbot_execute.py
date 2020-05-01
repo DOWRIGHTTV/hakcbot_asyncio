@@ -39,6 +39,7 @@ class Execute:
 
             if (cd_len):
                 self._apply_cooldown(cmd, cd_len)
+
             if (response):
                 await self.Hakcbot.send_message(*response)
 
@@ -58,6 +59,7 @@ class Execute:
                 return f'{url} does not have an active whitelist.'
 
             L.l1(f'removed {url} from whitelist')
+
         self.Hakcbot.Threads.add_file_task('url_whitelist')
 
     # NOTE: currently unused
@@ -162,4 +164,4 @@ class Execute:
                     L.l3(f'"{l}" is not a valid command string.')
                     return NULL
 
-        return cmd, tuple(a.strip() for a in args if a)
+        return cmd, tuple([a.strip() for a in args if a])

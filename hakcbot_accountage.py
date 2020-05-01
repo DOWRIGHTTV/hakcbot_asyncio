@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import time
 import requests
 import threading
 
@@ -30,7 +29,7 @@ class AccountAge:
 
     def add_to_queue(self, usr):
         '''async io function for adding tasks to account age queue.'''
-        if (usr.bcast or usr.mod or usr.sub or usr.vip or usr.name in self.whitelist): return
+        if any([usr.bcast, usr.mod, usr.sub, usr.vip]) or (usr.name in self.whitelist): return
 
         if (usr.name not in self._check_in_progress):
             self._check_in_progress.add(usr.name)
@@ -80,8 +79,8 @@ class AccountAge:
             if (name in validate_date):
                 validate_date[name] = number
 
-        for amount in validate_date.values():
-            if (amount):
-                return AA.ACCEPT, validate_date, account_age
+        if any(validate_date.values()):
+            return AA.ACCEPT, validate_date, account_age
+
         else:
             return AA.DROP, validate_date, account_age
