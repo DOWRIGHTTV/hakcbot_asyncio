@@ -8,7 +8,7 @@ from collections import deque
 
 from config import BROADCASTER
 from hakcbot_regex import AA
-from hakcbot_utilities import dynamic_looper, Log as L
+from hakcbot_utilities import queue, Log as L
 
 
 class AccountAge:
@@ -20,14 +20,13 @@ class AccountAge:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-        self._account_age_queue = deque()
         self._check_in_progress = set()
 
         self.whitelist = set()
 
     def start(self):
         L.l1('[+] Starting account age queue thread.')
-        threading.Thread(target=self._handle_queue).start()
+        threading.Thread(target=self.account_age).start()
 
     def add_to_queue(self, usr):
         '''async io function for adding tasks to account age queue.'''
@@ -36,13 +35,10 @@ class AccountAge:
         if (usr.name not in self._check_in_progress):
             self._check_in_progress.add(usr.name)
 
-            self._account_age_queue.append(usr)
+            self.account_age.add(usr) # pylint: disable=no-member
 
-    @dynamic_looper
-    def _handle_queue(self):
-        if (not self._account_age_queue): return 1
-
-        user = self._account_age_queue.popleft()
+    @queue(name='account_age', func_type='thread')
+    def account_age(self, user):
         threading.Thread(target=self._account_age, args=(user,)).start()
 
     def _account_age(self, user):
@@ -51,9 +47,11 @@ class AccountAge:
         if (result is AA.ACCEPT):
             L.l1(f'{user.name} added to account_age whitelist!')
             self.whitelist.add(user.name)
+
         elif (result is AA.DROP):
-            self.Hakcbot.Automate.flag_for_timeout.append(user.name)
+            self.Hakcbot.Automate.flag_for_timeout.add(user.name)
             L.l1(f'user timeout | {user.name} >> {vd} | {aa}')
+
         elif (result is AA.ERROR):
             L.l1('account age error while connecting to api.')
 

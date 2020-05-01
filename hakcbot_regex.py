@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 import re
+import time
 
 from enum import Enum
 from collections import namedtuple
 
+fast_time = time.time
 NULL = (None, None)
+ANNOUNCEMENT_INTERVAL = 120 * 60 # 120 minutes
 USER_TUPLE = namedtuple('user', 'name bcast mod sub vip permit timestamp')
 
 class AA(Enum):
@@ -26,7 +29,6 @@ USER_TAGS = re.compile(r'@badge-info=(.*?)user-type=')
 MESSAGE   = re.compile(r'user-type=(.*)')
 TITLE = re.compile(r'(?P<quote>[\'"]).*?(?P=quote)')
 
-
 VALID_CMD = re.compile(r'(.*?)\((.*?)\)')
 CMD = re.compile(r'(.*?)\(')
 ARG = re.compile(r'\((.*?)\)')
@@ -38,21 +40,7 @@ URL = re.compile(
     r'(?:/?|[/?]\S+)',
     re.IGNORECASE) # Sepcific pages in url eg /homepage
 
-# TITLE     = re.compile(r'title\((.*?)\)')
-# YOUR_MOM  = re.compile(r'yourmom\((.*?)\)')
-# YOUR_MUM  = re.compile(r'yourmum\((.*?)\)')
-# FLAG      = re.compile(r'flag\((.*?)\)')
-# UNFLAG    = re.compile(r'unflag\((.*?)\)')
-# PRAISE    = re.compile(r'praise\((.*?)\)')
-# QUOTE     = re.compile(r'quote\((.*?)\)')
-# QUOTE_ADD = re.compile(r'quoteadd\((.*?),(.*?)\)')
-
-# GIVE_ENTER  = re.compile(r'enter\((.*?)\)')
-# GIVE_STATUS = re.compile(r'status\((.*?)\)')
-
-
-
-# AA_WL  = re.compile(r'aa_wl\((.*?)\)')
-# ADD_WL = re.compile(r'add_wl\((.*?)\)')
-# DEL_WL = re.compile(r'del_wl\((.*?)\)')
-# PERMIT = re.compile(r'permit\((.*?)\)')
+ONE_MIN = 60
+TWO_MIN = 120
+THREE_MIN = 180
+FIVE_MIN = 300

@@ -51,7 +51,7 @@ class Init:
 
         self.Hakcbot.titles = stored_data['titles']
         self.Hakcbot.quotes = stored_data['quotes']
-        self.Hakcbot.url_whitelist = stored_data['url_whitelist']
+        self.Hakcbot.url_whitelist = set(stored_data['url_whitelist']) # NOTE: easier to deal with a set
         self.Hakcbot.word_filter   = stored_data['word_filter']
 
     def _create_tld_set(self):

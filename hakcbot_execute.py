@@ -9,8 +9,8 @@ import requests
 import json
 import traceback
 
-from config import *
-from hakcbot_regex import *
+from config import * # pylint: disable=unused-wildcard-import
+from hakcbot_regex import * # pylint: disable=unused-wildcard-import
 from hakcbot_utilities import load_from_file, write_to_file
 from datetime import datetime
 from hakcbot_utilities import Log as L
@@ -25,6 +25,7 @@ class Execute:
     async def task_handler(self, user, message):
         # if user is broadcaster and the join of words matches a valid command, the return will be the join.
         # otherwise the original message will be returned
+        self._special_command = False # NOTE: this can be done better prob.
         message = self._special_check(user, message)
         for word in message:
             cmd, args = self._get_command(word)
@@ -41,15 +42,22 @@ class Execute:
             if (response):
                 await self.Hakcbot.send_message(*response)
 
-    def adjust_whitelist(self, url, action=AK.ADD):
+    def adjust_whitelist(self, url, action):
+        current_whitelist = self.Hakcbot.url_whitelist
         if (action is AK.ADD):
-            self.Hakcbot.url_whitelist.append(url.lower())
+            if (url in current_whitelist):
+                return f'{url} already actively whitelisted.'
+
+            current_whitelist.add(url)
             L.l1(f'added {url} to whitelist')
 
         elif (action is AK.DEL):
-            self.Hakcbot.url_whitelist.pop(url.lower(), None)
-            L.l1(f'removed {url} from whitelist')
+            try:
+                current_whitelist.remove(url)
+            except KeyError:
+                return f'{url} does not have an active whitelist.'
 
+            L.l1(f'removed {url} from whitelist')
         self.Hakcbot.Threads.add_file_task('url_whitelist')
 
     # NOTE: currently unused
@@ -57,32 +65,70 @@ class Execute:
         config = load_from_file('config.json')
         self.blacklist = set(config['blacklist'])
 
-    def adjust_titles(self, name, title, *, action=AK.ADD):
-        if (action is AK.ADD):
-            self.Hakcbot.titles[name] = title
-            L.l1(f'added title for {name}, the {title}.')
+    def adjust_titles(self, name, title, tier, action):
+        if (action is AK.DEL):
+            user_data = self.Hakcbot.titles.pop(name, None)
+            old_title = user_data['title']
 
-        elif (action is AK.MOD):
-            old_title = self.Hakcbot.titles.get(name)
-            self.Hakcbot.titles[name] = title
-            L.l1(f'updated title for {name}, the {title} formerly the {old_title}.')
-
-        elif (action is AK.DEL):
-            self.Hakcbot.titles.pop(name, None)
             L.l1(f'removed title for {name}, the {title}.')
+
+            message = f'{name} is no longer known as the {old_title}'
+
+        else:
+            if (action is AK.ADD):
+                # default to one if not specified. did not want to make kwarg default 1 though
+                # to not conflict with updates.
+                if (not tier):
+                    tier = 1
+
+                self.Hakcbot.titles[name] = {
+                    'tier': tier,
+                    'title': title
+                }
+                L.l1(f'added title for {name}, the {title}.')
+
+                message = f'{name} is now known as the {title}'
+
+            elif (action is AK.MOD):
+                user_data = self.Hakcbot.titles.get(name)
+                old_title = user_data['title']
+                # if tier is not defined, we will grab current user tier.
+                if (not tier):
+                    tier = user_data['tier']
+
+                if (not title or len(title) < 5):
+                    title = user_data['title']
+
+                self.Hakcbot.titles[name] = {
+                    'tier': tier,
+                    'title': title
+                }
+                L.l1(f'updated tier {tier} title for {name}, the {title} formerly the {old_title}.')
+
+                if (old_title == title):
+                    message = f'{name}, the {title}, is now tier {tier}'
+                else:
+                    message = f'{name} (tier {tier}) is now known as the {title}, formerly the {old_title}'
 
         self.Hakcbot.Threads.add_file_task('titles')
 
-    def _special_check(self, usr, msg):
-        if (not usr.bcast): return msg
+        return message
 
+    def _special_check(self, usr, msg):
+        L.l4('special command parse started.')
+        if (not usr.bcast and not usr.mod): return msg
+
+        L.l4('bcaster or mod identified. checking for command match.')
         join_msg = ' '.join(msg)
         if not re.fullmatch(VALID_CMD, join_msg): return msg
 
+        L.l4('valid command match. cross referencing special commands list.')
         cmd = re.findall(CMD, join_msg)[0]
         if cmd not in self.Hakcbot.Commands._SPECIAL: return msg
 
         L.l3(f'returning special command {join_msg}')
+
+        self._special_command = True
         return [join_msg]
 
     def _get_title(self, arg):
@@ -91,7 +137,7 @@ class Execute:
 
     def _apply_cooldown(self, cmd, cd_len):
         L.l1(f'Putting {cmd} on cooldown.')
-        self.Hakcbot.Commands._COMMANDS[cmd] = time.time() + (cd_len*60)
+        self.Hakcbot.Commands._COMMANDS[cmd] = fast_time() + cd_len
 
     def _get_command(self, word):
         if not re.fullmatch(VALID_CMD, word): return NULL
@@ -100,9 +146,6 @@ class Execute:
         if (cmd not in self.Hakcbot.Commands._COMMANDS): return NULL
 
         args = re.findall(ARG, word)[0]
-        for l in cmd:
-            if (not l.isalnum()): return NULL
-
         if (args.startswith(',') or args.endswith(',')): return NULL
         args = args.split(',')
         L.l3(f'pre args filter | {args}')
@@ -111,8 +154,12 @@ class Execute:
             title = self._get_title(arg)
             if (title): continue
             for l in arg:
+                # allow special commands to have urls. required for url whitelist.
+                if ('.' in l and self._special_command): continue
+                # ensuring users cannot abuse commands to bypass secuirty control. underscores are fine because they pose
+                # no (known) threat and are commonly used in usernames.
                 if (not l.isalnum() and l != '_'):
-                    L.l3(f'{l} is not a valid command string.')
+                    L.l3(f'"{l}" is not a valid command string.')
                     return NULL
 
         return cmd, tuple(a.strip() for a in args if a)
