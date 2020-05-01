@@ -82,6 +82,10 @@ class Commands(cs):
         ltime = time.strftime('%H:%M:%S', time.localtime())
         return f"{BROADCASTER}'s time is {ltime}"
 
+    @cs.cmd('hw', 3, auto=3)
+    def sub(self):
+        return 'The current target hardware is Espressobin: --> http://espressobin.net'
+
 # ========================
 #   NON STANDARD COMMANDS
 # ========================
