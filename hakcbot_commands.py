@@ -8,7 +8,7 @@ import requests
 from time import strftime, localtime
 
 from config import BROADCASTER
-from hakcbot_regex import NULL, AK, ONE_MIN, THREE_MIN
+from hakcbot_regex import fast_time, NULL, AK, ONE_MIN, THREE_MIN
 from hakcbot_utilities import Log as L, CommandStructure as cs
 
 
@@ -83,7 +83,7 @@ class Commands(cs):
         return f"{BROADCASTER}'s time is {ltime}"
 
     @cs.cmd('hw', THREE_MIN)
-    def sub(self):
+    def hw(self):
         return 'The current target hardware is Espressobin: --> http://espressobin.net'
 
     @cs.cmd('laptop', THREE_MIN)

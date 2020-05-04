@@ -150,27 +150,27 @@ class Log:
         print(f'{IDENT}: {message}' if ':' not in message else message)
 
     @level(0)
-    def l0(self):
+    def l0(self, message):
         '''raised/caught exceptions.'''
         pass
 
     @level(1)
-    def l1(self):
+    def l1(self, message):
         '''bot logic eg. putting command on cooldown.'''
         pass
 
     @level(2)
-    def l2(self):
+    def l2(self, message):
         '''local generated chat messages.'''
         pass
 
     @level(3)
-    def l3(self):
+    def l3(self, message):
         '''informational output.'''
         pass
 
     @level(4)
-    def l4(self):
+    def l4(self, message):
         '''debug output.'''
         pass
 
@@ -194,7 +194,7 @@ class CommandStructure:
             cls._AUTOMATE[cmd] = auto
         def decorator(command_function):
             def wrapper(*args, usr):
-                if (usr.mod or usr.bcast): pass # cooldown bypass
+                if any([usr.bcast, usr.mod, usr.vip, usr.sub]): pass # cooldown bypass
                 elif cls.on_cooldown(cmd): return NULL
                 try:
                     response = command_function(*args)

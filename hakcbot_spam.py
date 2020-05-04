@@ -95,7 +95,7 @@ class Spam:
         vip = bool(re.search(VIP, tags))
 
         # permitting the following roles to post links.
-        permit = bool(bcast or mod or sub or vip)
+        permit = any([bcast, mod, sub, vip])
 
         usr_permit = self.permit_list.get(username, None)
         if (not permit and usr_permit):
