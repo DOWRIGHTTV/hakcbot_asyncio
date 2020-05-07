@@ -141,6 +141,10 @@ class Commands(cs):
             msg = f'\\ [T] / ({usr})'
 
         return msg
+    
+    @cs.cmd('congrats', THREE_MIN)
+    def congrats(self, usr):
+        return f"Yo {usr}! Welcome to the team. Grab a beer and take a seat."
 
 # ===============
 #   MOD COMMANDS
