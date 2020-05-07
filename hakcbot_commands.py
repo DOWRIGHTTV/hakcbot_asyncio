@@ -91,7 +91,7 @@ class Commands(cs):
         return 'i use this laptop --> dell e7250 12.5in, i5-5300U 2.3ghz, 8g ram, 256 ssd'
 
     @cs.cmd('iobound', THREE_MIN)
-    def laptop(self):
+    def iobound(self):
         diatribe = ("First, Python is not slow.  Python is faster than the I/O "
                     "we're waiting for.  C and all other languages must wait "
                     "just as long as Python for packets to arrive.  Packet "
