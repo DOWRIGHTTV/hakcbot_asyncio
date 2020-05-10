@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-import threading, asyncio
+import threading
+import uvloop, asyncio
 import requests
 import time
 import traceback
@@ -43,8 +44,7 @@ class Hakcbot:
         self.Threads.start()
         self.AccountAge.start()
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        uvloop.install()
         asyncio.run(self.main())
 
     async def main(self):
@@ -54,10 +54,10 @@ class Hakcbot:
 
     async def hakc_general(self):
         L.l1('[+] Starting main bot process.')
-        loop = asyncio.get_running_loop()
+        sock, loop = self.sock, asyncio.get_running_loop()
         while True:
             try:
-                data = await loop.sock_recv(self.sock, 1024)
+                data = await loop.sock_recv(sock, 1024)
             except OSError as E:
                 L.l3(f'MAIN SOCKET ERROR | ATTEMPING RECONNECT | {E}')
                 break
@@ -91,13 +91,14 @@ class Hakcbot:
 
         # placeholder for when i want to track joins/ see if a user joins
         elif ('JOIN' in data):
-            print(data)
+            L.l3(data)
 
         # probably a bunk ass message, not sure????? should protect higher tier titles for now.
         else:
+            L.l3(f'else: {data}')
             return
 
-        ### FUTURE USE - FOR T2 TITLES ###
+        # T2 TITLES
         if (not user): return
         try:
             titled_user = self.titles[user.name] # pylint: disable=no-member
@@ -106,8 +107,10 @@ class Hakcbot:
         else:
             prior_announcement = self.announced_titles.get(user.name, None)
             if titled_user['tier'] == 2 and not self.recently_announced(prior_announcement):
+
                 # already announced users - type > set()
                 self.announced_titles[user.name] = fast_time()
+
                 # announcing the user to chat
                 if (self.online):
                     await self.announce_title(user.name, titled_user['title'])
@@ -130,6 +133,7 @@ class Hakcbot:
     async def send_message(self, *msgs):
         loop = asyncio.get_running_loop()
         for msg in msgs:
+
             # ensuring empty returns to do not get sent over irc
             if (not msg): continue
 
@@ -176,6 +180,7 @@ class Automate:
     @queue(name='timeout', func_type='async')
     async def timeout(self, username):
         message = f'/timeout {username} 3600 account age less than one day.'
+
         response = f'{username}, you have been timed out for having an account age \
             less that one day old. this is to prevent bot spam. if you are a human \
             (i can tell from first message), i will remove the timeout when i see it, \
@@ -223,6 +228,7 @@ class Threads:
             if (uptime == 'dowright is offline'):
                 self.Hakcbot.online = False
                 self.Hakcbot.uptime_message = 'DOWRIGHT is OFFLINE'
+
             else:
                 self.Hakcbot.online = True
                 self.Hakcbot.uptime_message = f'DOWRIGHT has been live for {uptime}'

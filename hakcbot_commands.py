@@ -80,6 +80,7 @@ class Commands(cs):
     @cs.cmd('time', THREE_MIN)
     def time(self):
         ltime = strftime('%H:%M:%S', localtime())
+
         return f"{BROADCASTER}'s time is {ltime}"
 
     @cs.cmd('hw', THREE_MIN)
@@ -96,6 +97,7 @@ class Commands(cs):
                     "we're waiting for.  C and all other languages must wait "
                     "just as long as Python for packets to arrive.  Packet "
                     "inspection and filtering is an I/O bound task.")
+
         return diatribe
 
 
@@ -150,7 +152,7 @@ class Commands(cs):
             msg = f'\\ [T] / ({usr})'
 
         return msg
-    
+
     @cs.cmd('congrats', THREE_MIN)
     def congrats(self, usr):
         return f"Yo {usr}! Welcome to the team. Grab a beer and take a seat."
@@ -161,7 +163,7 @@ class Commands(cs):
 
     @cs.mod('permit')
     def permit(self, usr):
-        self.Hakcbot.Spam.permit_list[usr.lower()] = fast_time() + THREE_MIN
+        self.Hakcbot.Spam.permit_list[usr] = fast_time() + THREE_MIN
         message  = f'/untimeout {usr}'
         response = f'{usr}, you can now post links for 3 minutes.'
 
@@ -169,7 +171,7 @@ class Commands(cs):
 
     @cs.mod('acctwl')
     def acctwl(self, usr):
-        self.Hakcbot.AccountAge.whitelist.add(usr.lower())
+        self.Hakcbot.AccountAge.whitelist.add(usr)
         message  = f'/untimeout {usr}'
         response = f'{usr}, your account age block has been lifted. chat away!'
 
@@ -222,6 +224,7 @@ class Commands(cs):
 
         action, tier, title = AK(int(action)), int(tier), title.strip('"').strip("'")
         ALREADY_EXISTS = self.Hakcbot.titles.get(name, None)
+
         if (action is AK.ADD):
             if (ALREADY_EXISTS):
                 return f'{name} is already known as the {ALREADY_EXISTS}. modify action required.', None

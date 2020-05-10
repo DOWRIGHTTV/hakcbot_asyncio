@@ -22,8 +22,10 @@ class Spam:
         containing all words in message.'''
         self._line = line
 
-        error = self._format_line()
-        if (error): return None
+        # if there is a return an exception was raise // returning
+        if self._format_line(): return None
+
+        self._custom_filter_hook()
 
         block_message = self._message_filter()
         if (block_message):
@@ -31,7 +33,11 @@ class Spam:
             return None
 
         L.l2(f'{self._user.name}: {self._message}')
-        return self._user, [w.lower() for w in self._message.split()]
+        return self._user, [w for w in self._message.split()]
+
+    # hook for implemented custom, real time filters to prevent bots, spam, etc.
+    def _custom_filter_hook(self):
+        pass
 
     # running messages through filter to detect links or banned words.
     def _message_filter(self):
@@ -81,9 +87,11 @@ class Spam:
         self._user, self._message = None, None
         try:
             tags = re.findall(USER_TAGS, self._line)[0]
-            msg  = re.findall(MESSAGE, self._line)[0].split(':', 2)
-            username = msg[1].split('!')[0].lower()
-            message  = msg[2].lower() # converting to lower to prevent issues with string matching
+
+            # converting to lower to make it easier to string match
+            msg = re.findall(MESSAGE, self._line)[0].split(':', 2).lower()
+            username = msg[1].split('!')[0]
+            message  = msg[2]
         except Exception as E:
             L.l0(f'Parse Error: {E}')
             return E

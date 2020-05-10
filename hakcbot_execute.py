@@ -78,8 +78,8 @@ class Execute:
 
         else:
             if (action is AK.ADD):
-                # default to one if not specified. did not want to make kwarg default 1 though
-                # to not conflict with updates.
+
+                # default to one if not specified. did not want to make kwarg default 1 though to not conflict with updates.
                 if (not tier):
                     tier = 1
 
@@ -94,6 +94,7 @@ class Execute:
             elif (action is AK.MOD):
                 user_data = self.Hakcbot.titles.get(name)
                 old_title = user_data['title']
+
                 # if tier is not defined, we will grab current user tier.
                 if (not tier):
                     tier = user_data['tier']
@@ -109,6 +110,7 @@ class Execute:
 
                 if (old_title == title):
                     message = f'{name}, the {title}, is now tier {tier}'
+
                 else:
                     message = f'{name} (tier {tier}) is now known as the {title}, formerly the {old_title}'
 
@@ -135,6 +137,7 @@ class Execute:
 
     def _get_title(self, arg):
         title = re.match(TITLE, arg)
+
         return title[0] if title else None
 
     def _apply_cooldown(self, cmd, cd_len):
@@ -150,14 +153,16 @@ class Execute:
         args = re.findall(ARG, word)[0]
         if (args.startswith(',') or args.endswith(',')): return NULL
         args = args.split(',')
+
         L.l3(f'pre args filter | {args}')
         for arg in args:
-            arg = arg.strip()
-            title = self._get_title(arg)
-            if (title): continue
+            if self._get_title(arg.strip()): continue
+
             for l in arg:
+
                 # allow special commands to have urls. required for url whitelist.
                 if ('.' in l and self._special_command): continue
+
                 # ensuring users cannot abuse commands to bypass secuirty control. underscores are fine because they pose
                 # no (known) threat and are commonly used in usernames.
                 if (not l.isalnum() and l != '_'):

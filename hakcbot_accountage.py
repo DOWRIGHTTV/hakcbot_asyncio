@@ -43,6 +43,7 @@ class AccountAge:
     def _account_age(self, user):
         L.l1(f'{user.name} added to account age queue!')
         result, vd, aa = self._get_accountage(user.name)
+
         if (result is AA.ACCEPT):
             L.l1(f'{user.name} added to account_age whitelist!')
             self.whitelist.add(user.name)
