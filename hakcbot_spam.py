@@ -33,7 +33,7 @@ class Spam:
             return None
 
         L.l2(f'{self._user.name}: {self._message}')
-        return self._user, [w for w in self._message.split()]
+        return self._user, self._message.split()
 
     # hook for implemented custom, real time filters to prevent bots, spam, etc.
     def _custom_filter_hook(self):
