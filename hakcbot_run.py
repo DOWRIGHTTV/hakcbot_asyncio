@@ -10,7 +10,7 @@ from config import * # pylint: disable=unused-wildcard-import
 from socket import socket
 from collections import deque, namedtuple
 
-from hakcbot_init import Init
+from hakcbot_init import Initialize
 from hakcbot_spam import Spam
 from hakcbot_execute import Execute
 from hakcbot_commands import Commands
@@ -22,55 +22,54 @@ from hakcbot_utilities import load_from_file, write_to_file, Log as L
 
 
 class Hakcbot:
-    def __init__(self):
-        self.sock = socket()
-        self.Init = Init(self)
+    online = False
+    linecount = 0
+    last_message = 0
+    uptime_message = 'hakbot is still initializing! try again in a bit.'
 
-        self.Automate = Automate(self)
-        self.Threads  = Threads(self)
-        self.Spam     = Spam(self)
+    announced_titles = {}
+
+    def __init__(self):
         self.Execute  = Execute(self)
         self.Commands = Commands(self)
-        self.AccountAge = AccountAge(self)
 
-        self.online = False
-        self.linecount = 0
-        self.last_message = 0
-        self.uptime_message = 'hakbot is still initializing! try again in a bit.'
+    @classmethod
+    def start(cls):
+        Initialize.setup(cls)
 
-        self.announced_titles = {}
-
-    def start(self):
-        self.Threads.start()
-        self.AccountAge.start()
+        Automate.set_primary_reference(cls)
+        Threads.start(cls)
+        AccountAge.start(cls)
+        Spam.setup(cls)
 
         uvloop.install()
+
+        self = cls()
         asyncio.run(self.main())
 
     async def main(self):
-        await self.Init.initialize()
+        await Initialize.start()
 
         await asyncio.gather(self.hakc_general(), self.hakc_automation())
 
     async def hakc_general(self):
         L.l1('[+] Starting main bot process.')
-        sock, loop = self.sock, asyncio.get_running_loop()
+        sock, asock_recv = self.sock, asyncio.get_running_loop().sock_recv
         while True:
             try:
-                data = await loop.sock_recv(sock, 1024)
+                data = await asock_recv(sock, 1024)
             except OSError as E:
-                L.l3(f'MAIN SOCKET ERROR | ATTEMPING RECONNECT | {E}')
+                L.l3(f'MAIN SOCKET ERROR | {E}')
                 break
             else:
                 if (not data):
-                    L.l3('SOCKET CLOSED BY REMOTE SERVER | ATTEMPING RECONNECT')
+                    L.l3('SOCKET CLOSED BY REMOTE SERVER')
                     break
 
                 await self._message_handler(data.decode('utf-8', 'ignore').strip())
 
-        # closing socket and recursively calling main to attempt reconnect
+        # closing socket | TODO: figure out how we can reconnect properly
         self.sock.close()
-        await self.main()
 
     async def _message_handler(self, data):
         loop, user = asyncio.get_running_loop(), None
@@ -78,15 +77,13 @@ class Hakcbot:
             await loop.sock_sendall(self.sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
 
         elif ('PRIVMSG' in data):
-            valid_data = await self.Spam.pre_process(data)
-            if (not valid_data): return
-
-            self.linecount += 1
-            self.last_message = fast_time()
-            user, message = valid_data
+            spam_filter = Spam(data)
+            user, message = await spam_filter.pre_process()
+            if not user: return
 
             # function will check if already in progress before sending to the queue
-            self.AccountAge.add_to_queue(user)
+            AccountAge.add_to_queue(user)
+
             await self.Execute.task_handler(user, message)
 
         # placeholder for when i want to track joins/ see if a user joins
@@ -142,38 +139,43 @@ class Hakcbot:
                 self.sock, f'PRIVMSG #{CHANNEL} :{msg}\r\n'.encode('utf-8')
             )
 
+    # NOTE: we can probably clean this up and make the Automate class alittle more native like
     async def hakc_automation(self):
         L.l1('[+] Starting automated command process.')
+
+        self.Automate = Automate()
         await asyncio.gather(
             self.Automate.reset_line_count(),
             self.Automate.timeout(), # pylint: disable=no-value-for-parameter
             *[self.Automate.timers(k, v) for k,v in self.Commands._AUTOMATE.items()])
 
 class Automate:
-    def __init__(self, Hakcbot):
-        self.Hakcbot = Hakcbot
+    _Hackbot = None
 
+    def __init__(self):
         self.hakcusr = USER_TUPLE(
             'hakcbot', False, False, False,
             False, True, fast_time()
         )
 
-    # temp until we switch reference to queue object add function itself.
-    def flag_for_timeout(self, username):
-        self.timeout.add(username) # pylint: disable=no-member
+    @classmethod
+    def setup(cls, Hakcbot):
+        cls._Hackbot = Hakcbot
 
     @dynamic_looper(func_type='async')
     async def reset_line_count(self):
         time_elapsed = fast_time() - self.Hakcbot.last_message
         if (time_elapsed > FIVE_MIN):
-            self.Hakcbot.linecount = 0
+            self._Hakcbot.linecount = 0
 
         return FIVE_MIN
 
     @dynamic_looper(func_type='async')
+    # NOTE: this is no longer working!!!
     async def timers(self, cmd, timer):
-        if (self.Hakcbot.linecount >= 3):
-            getattr(self.Hakcbot.Commands, cmd)(usr=self.hakcusr)
+        if (self._Hakcbot.linecount >= 3):
+            # getattr(self.Hakcbot.Commands, cmd)(usr=self.hakcusr)
+            pass
 
         return ONE_MIN * timer
 
@@ -186,7 +188,7 @@ class Automate:
             (i can tell from first message), i will remove the timeout when i see it, \
             sorry!'
 
-        await self.Hakcbot.send_message(message, response)
+        await self._Hakcbot.send_message(message, response)
 
 
 class Threads:
@@ -195,8 +197,11 @@ class Threads:
 
         self._last_status = None
 
-    def start(self):
+    @classmethod
+    def start(cls, Hakcbot):
         L.l1('[+] Starting bot threads.')
+
+        self = cls(Hakcbot)
         threading.Thread(target=self._uptime).start()
         threading.Thread(target=self.file_task).start()
 

@@ -16,49 +16,61 @@ class AccountAge:
     adding to the queue will done as a async function to be compatible with the main bot code, but the class itself will be
     utiliting threads to achieve concurrent processing.
     '''
-    def __init__(self, Hakcbot):
-        self.Hakcbot = Hakcbot
 
-        self._check_in_progress = set()
+    _check_in_progress = set()
+    _whitelist = set()
 
-        self.whitelist = set()
+    def __init__(self, Hakcbot, Automate):
+        self._Hakcbot = Hakcbot
+        self._Automate = Automate
 
-    def start(self):
+        self._wl_add = self._whitelist.add
+        self._in_prog_add = self._check_in_progress.add
+        self._in_prog_del = self._check_in_progress.remove
+        self.aa_add = self._account_age.add
+
+    @classmethod
+    def start(cls, Hakcbot, Automate):
         L.l1('[+] Starting account age queue thread.')
-        threading.Thread(target=self.account_age).start()
 
-    def add_to_queue(self, usr):
-        '''async io function for adding tasks to account age queue.'''
-        if any([usr.bcast, usr.mod, usr.sub, usr.vip]) or (usr.name in self.whitelist): return
+        self = cls(Hakcbot, Automate)
+        threading.Thread(target=self._account_age).start()
 
-        if (usr.name not in self._check_in_progress):
-            self._check_in_progress.add(usr.name)
+    @classmethod
+    def add_to_queue(cls, usr):
+        '''adding users to account age queue if they are not whitelisted or have a special role.'''
 
-            self.account_age.add(usr) # pylint: disable=no-member
+        if any([usr.bcast, usr.mod, usr.sub, usr.vip]) or (usr.name in cls._whitelist): return
+
+        if (usr.name not in cls._check_in_progress):
+            cls._in_prog_add(usr.name)
+
+            cls.aa_add(usr) # pylint: disable=no-member
 
     @queue(name='account_age', func_type='thread')
-    def account_age(self, user):
-        threading.Thread(target=self._account_age, args=(user,)).start()
-
     def _account_age(self, user):
         L.l1(f'{user.name} added to account age queue!')
+
         result, vd, aa = self._get_accountage(user.name)
 
         if (result is AA.ACCEPT):
+            self._wl_add(user.name)
+
             L.l1(f'{user.name} added to account_age whitelist!')
-            self.whitelist.add(user.name)
 
         elif (result is AA.DROP):
-            self.Hakcbot.Automate.flag_for_timeout.add(user.name)
+            self._Automate.timeout.add(user.name)
+
             L.l1(f'user timeout | {user.name} >> {vd} | {aa}')
 
         elif (result is AA.ERROR):
             L.l1('account age error while connecting to api.')
 
-        self._check_in_progress.remove(user.name)
+        self._in_prog_del(user.name)
 
+    @staticmethod
     # return True will mark for timeout, False will add to whitelist, None will check on next message due to errors
-    def _get_accountage(self, username):
+    def _get_accountage(username):
         validate_date = {
             'year' : None, 'years' : None,
             'month': None, 'months': None,

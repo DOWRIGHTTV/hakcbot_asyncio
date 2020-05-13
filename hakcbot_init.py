@@ -8,10 +8,9 @@ from config import * # pylint: disable=unused-wildcard-import
 from hakcbot_utilities import load_from_file, Log as L
 
 
-class Init:
-    def __init__(self, Hakcbot):
-        self.Hakcbot = Hakcbot
-        self.Hakcbot.sock.setblocking(0)
+class Initialize:
+    def __init__(self):
+        self._create_socket()
 
         self.connect_process = [
             f'PASS {PASS}',
@@ -20,7 +19,16 @@ class Init:
             'CAP REQ :twitch.tv/tags'
         ]
 
-    async def initialize(self):
+    @classmethod
+    def setup(cls, Hakcbot):
+        cls._Hakcbot = Hakcbot
+
+    @classmethod
+    async def start(cls):
+        self = cls()
+        self._start()
+
+    async def _start(self):
         self._load_json_data()
         self._create_tld_set()
 
@@ -30,7 +38,7 @@ class Init:
     async def _join_room(self):
         loop = asyncio.get_running_loop()
 
-        await loop.sock_connect(self.Hakcbot.sock, (self._host, self._port))
+        await loop.sock_connect(self._Hakcbot.sock, (self._host, self._port))
         for step in self.connect_process:
             await loop.sock_sendall(self.Hakcbot.sock, f'{step}\r\n'.encode('utf-8'))
 
@@ -53,7 +61,7 @@ class Init:
         self.Hakcbot.titles = stored_data['titles']
         self.Hakcbot.quotes = stored_data['quotes']
         self.Hakcbot.url_whitelist = set(stored_data['url_whitelist']) # easier to deal with a set
-        self.Hakcbot.word_filter   = stored_data['word_filter']
+        self.Hakcbot.word_filter   = set(stored_data['word_filter'])
 
         self._host = stored_data['twitch']['host']
         self._port = stored_data['twitch']['port']
@@ -63,3 +71,7 @@ class Init:
             tlds = TLDs.read().splitlines()
 
         self.Hakcbot.domain_tlds = set([t.lower() for t in tlds if len(t) <= 6 and not t.startswith('#')])
+
+    def _create_socket(self):
+        self._Hakcbot.sock = socket()
+        self._Hakcbot.sock.setblocking(0)

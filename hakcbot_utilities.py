@@ -79,6 +79,7 @@ def queue(name, *, func_type='thread'):
         job_available = threading.Event()
         job_wait  = job_available.wait
         job_clear = job_available.clear
+        job_set   = job_available.set
 
         if (func_type == 'thread'):
             def wrapper(*args):
@@ -123,7 +124,7 @@ def queue(name, *, func_type='thread'):
         def add(job):
             '''adds job to work queue, then marks event indicating a job is available.'''
             queue_add(job)
-            job_available.set()
+            job_set()
 
         wrapper.add = add
         return wrapper

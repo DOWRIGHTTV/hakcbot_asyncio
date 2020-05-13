@@ -9,6 +9,7 @@ from time import strftime, localtime
 
 from config import BROADCASTER
 from hakcbot_regex import fast_time, NULL, AK, ONE_MIN, THREE_MIN
+from hakcbot_spam import Spam
 from hakcbot_utilities import Log as L, CommandStructure as cs
 
 
@@ -75,7 +76,7 @@ class Commands(cs):
 
     @cs.cmd('uptime', THREE_MIN)
     def uptime(self):
-        return self.Hakcbot.uptime_message
+        return self._Hakcbot.uptime_message
 
     @cs.cmd('time', THREE_MIN)
     def time(self):
@@ -123,7 +124,7 @@ class Commands(cs):
                 T2/T3 is not currently active.'
 
         try:
-            title = self.Hakcbot.titles[usr]['title']
+            title = self._Hakcbot.titles[usr]['title']
         except KeyError:
             return f'{usr} is not named in the hakcerdom.'
 
@@ -131,7 +132,7 @@ class Commands(cs):
 
     @cs.cmd('quote', THREE_MIN)
     def quote(self, num):
-        quote, year = self.Hakcbot.quotes.get(num, NULL)
+        quote, year = self._Hakcbot.quotes.get(num, NULL)
         if not quote: return None
 
         return f'{quote} - {BROADCASTER} {year}'
@@ -163,9 +164,9 @@ class Commands(cs):
 
     @cs.mod('permit')
     def permit(self, usr):
-        self.Hakcbot.Spam.permit_list[usr] = fast_time() + THREE_MIN
+        self.Hakcbot.Spam.permit_list.add(usr)
         message  = f'/untimeout {usr}'
-        response = f'{usr}, you can now post links for 3 minutes.'
+        response = f'{usr}, you can now post 1 link.'
 
         return message, response
 
