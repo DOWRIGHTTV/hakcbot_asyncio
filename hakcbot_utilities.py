@@ -29,6 +29,12 @@ def write_to_file(data, filename):
     with open(f'{filename}', 'w') as settings:
         json.dump(data, settings, indent=4)
 
+def load_tlds():
+    with open('TLDs') as TLDs:
+        tlds = TLDs.read().splitlines()
+
+        return set([t.lower() for t in tlds if len(t) <= 6 and not t.startswith('#')])
+
 def dynamic_looper(*, func_type='thread'):
     '''decorator to maintain daemon loop which will sleep for the returned integer length.
     if no return is specified, sleep will not be called. default func type is for threads.'''
@@ -181,6 +187,73 @@ class CommandStructure:
     _AUTOMATE = {}
     _SPECIAL  = {}
 
+    # general methods for dealing with bot commands
+    ## checking each word in message for a command.
+    def task_handler(self, user, message):
+        # if user is broadcaster and the join of words matches a valid command, the return will be the join.
+        # otherwise the original message will be returned
+        self._special_command = False # NOTE: this can be done better prob.
+        message = self._special_check(user, message)
+        for word in message:
+            cmd, args = self._get_command(word)
+            if (not cmd): continue
+
+            try:
+                response = getattr(self, cmd)(*args, usr=user) # pylint: disable=not-an-iterable
+            except Exception as E:
+                Log.l0(E)
+
+            else:
+
+                if (response):
+                    return response
+
+    def _special_check(self, usr, msg):
+        Log.l4('special command parse started.')
+        if (not usr.bcast and not usr.mod): return msg
+
+        Log.l4('bcaster or mod identified. checking for command match.')
+        join_msg = ' '.join(msg)
+        if not re.fullmatch(VALID_CMD, join_msg): return msg
+
+        Log.l4('valid command match. cross referencing special commands list.')
+        cmd = re.findall(CMD, join_msg)[0]
+        if cmd not in self._SPECIAL: return msg
+
+        Log.l3(f'returning special command {join_msg}')
+
+        self._special_command = True
+        return [join_msg]
+
+    def _get_command(self, word):
+        if not re.fullmatch(VALID_CMD, word): return NULL
+
+        cmd = re.findall(CMD, word)[0]
+        if (cmd not in self._COMMANDS): return NULL
+
+        args = re.findall(ARG, word)[0]
+        if (args.startswith(',') or args.endswith(',')): return NULL
+        args = args.split(',')
+
+        Log.l3(f'pre args filter | {args}')
+        for arg in args:
+            if self._get_title(arg.strip()): continue
+
+            for l in arg:
+
+                # allow special commands to have urls. required for url whitelist.
+                if ('.' in l and self._special_command): continue
+
+                # ensuring users cannot abuse commands to bypass security control. underscores are fine because they pose
+                # no (known) threat and are commonly used in usernames.
+                if (not l.isalnum() and l != '_'):
+                    Log.l3(f'"{l}" is not a valid command string.')
+                    return NULL
+
+        return cmd, tuple([a.strip() for a in args if a])
+
+    # command wrappers/ utilites to make command maintenance and creation easier.
+
     @classmethod
     def on_cooldown(cls, c_name):
         cd_time = cls._COMMANDS.get(c_name, None)
@@ -190,7 +263,7 @@ class CommandStructure:
 
     @classmethod
     def cmd(cls, cmd, cd, *, auto=None):
-        cls._COMMANDS[cmd] = 0
+        cls._COMMANDS[cmd] = 1
         if (auto):
             cls._AUTOMATE[cmd] = auto
         def decorator(command_function):
@@ -202,8 +275,10 @@ class CommandStructure:
                 except TypeError:
                     return NULL
                 else:
+                    Log.l1(f'Putting {cmd} on cooldown.')
+                    cls._COMMANDS[cmd] = fast_time() + cd
                     # making msgs an iterator for compatibility with multiple response commands.
-                    return cd, (response,)
+                    return (response,)
             return wrapper
         return decorator
 
@@ -216,19 +291,19 @@ class CommandStructure:
             def wrapper(*args, usr):
                 if (not usr.mod and not usr.bcast): return NULL
 
-                return None, command_function(*args)
+                return command_function(*args)
             return wrapper
         return decorator
 
     @classmethod
     def brc(cls, cmd, *, spc=False):
+        cls._COMMANDS[cmd] = 0
         if (spc):
             cls._SPECIAL[cmd] = 1
-        cls._COMMANDS[cmd] = 0
         def decorator(command_function):
             def wrapper(*args, usr):
                 if (not usr.bcast): return NULL
 
-                return None, command_function(*args)
+                return command_function(*args)
             return wrapper
         return decorator

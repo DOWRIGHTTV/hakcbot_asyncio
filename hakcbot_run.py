@@ -6,10 +6,9 @@ import requests
 import time
 import traceback
 
-from config import * # pylint: disable=unused-wildcard-import
 from socket import socket
-from collections import deque, namedtuple
 
+from config import * # pylint: disable=unused-wildcard-import
 from hakcbot_init import Initialize
 from hakcbot_spam import Spam
 from hakcbot_execute import Execute
@@ -28,6 +27,7 @@ class Hakcbot:
     uptime_message = 'hakbot is still initializing! try again in a bit.'
 
     announced_titles = {}
+    _sock = socket()
 
     def __init__(self):
         self.Execute  = Execute(self)
@@ -37,9 +37,9 @@ class Hakcbot:
     def start(cls):
         Initialize.setup(cls)
 
-        Automate.set_primary_reference(cls)
+        Automate.setup(cls)
         Threads.start(cls)
-        AccountAge.start(cls)
+        AccountAge.start(cls, Automate)
         Spam.setup(cls)
 
         uvloop.install()
@@ -54,7 +54,7 @@ class Hakcbot:
 
     async def hakc_general(self):
         L.l1('[+] Starting main bot process.')
-        sock, asock_recv = self.sock, asyncio.get_running_loop().sock_recv
+        sock, asock_recv = self._sock, asyncio.get_running_loop().sock_recv
         while True:
             try:
                 data = await asock_recv(sock, 1024)
@@ -69,22 +69,28 @@ class Hakcbot:
                 await self._message_handler(data.decode('utf-8', 'ignore').strip())
 
         # closing socket | TODO: figure out how we can reconnect properly
-        self.sock.close()
+        self._sock.close()
 
     async def _message_handler(self, data):
+        # NOTE: probably dont need user definition
         loop, user = asyncio.get_running_loop(), None
         if (data == 'PING :tmi.twitch.tv'):
-            await loop.sock_sendall(self.sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
+            await loop.sock_sendall(self._sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
 
         elif ('PRIVMSG' in data):
             spam_filter = Spam(data)
             user, message = await spam_filter.pre_process()
-            if not user: return
 
-            # function will check if already in progress before sending to the queue
-            AccountAge.add_to_queue(user)
+            if (not user and not message): return
 
-            await self.Execute.task_handler(user, message)
+            elif (not user):
+                self.send_message(message)
+
+            else:
+                # function will check if already in progress before sending to the queue
+                AccountAge.add_to_queue(user)
+
+                await self.Execute.task_handler(user, message)
 
         # placeholder for when i want to track joins/ see if a user joins
         elif ('JOIN' in data):
@@ -136,7 +142,7 @@ class Hakcbot:
 
             L.l2(msg)
             await loop.sock_sendall(
-                self.sock, f'PRIVMSG #{CHANNEL} :{msg}\r\n'.encode('utf-8')
+                self._sock, f'PRIVMSG #{CHANNEL} :{msg}\r\n'.encode('utf-8')
             )
 
     # NOTE: we can probably clean this up and make the Automate class alittle more native like
@@ -150,7 +156,6 @@ class Hakcbot:
             *[self.Automate.timers(k, v) for k,v in self.Commands._AUTOMATE.items()])
 
 class Automate:
-    _Hackbot = None
 
     def __init__(self):
         self.hakcusr = USER_TUPLE(
@@ -164,8 +169,7 @@ class Automate:
 
     @dynamic_looper(func_type='async')
     async def reset_line_count(self):
-        time_elapsed = fast_time() - self.Hakcbot.last_message
-        if (time_elapsed > FIVE_MIN):
+        if (fast_time() - self._Hakcbot.last_message > FIVE_MIN):
             self._Hakcbot.linecount = 0
 
         return FIVE_MIN

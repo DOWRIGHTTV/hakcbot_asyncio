@@ -21,28 +21,6 @@ class Execute:
     def __init__(self, Hakcbot):
         self.Hakcbot = Hakcbot
 
-    ## checking each word in message for a command.
-    async def task_handler(self, user, message):
-        # if user is broadcaster and the join of words matches a valid command, the return will be the join.
-        # otherwise the original message will be returned
-        self._special_command = False # NOTE: this can be done better prob.
-        message = self._special_check(user, message)
-        for word in message:
-            cmd, args = self._get_command(word)
-            if (not cmd): continue
-
-            try:
-                cd_len, response = getattr(self.Hakcbot.Commands, cmd)(*args, usr=user) # pylint: disable=not-an-iterable
-            except Exception as E:
-                L.l0(E)
-                continue
-
-            if (cd_len):
-                self._apply_cooldown(cmd, cd_len)
-
-            if (response):
-                await self.Hakcbot.send_message(*response)
-
     def adjust_whitelist(self, url, action):
         current_whitelist = self.Hakcbot.url_whitelist
         if (action is AK.ADD):
@@ -118,55 +96,7 @@ class Execute:
 
         return message
 
-    def _special_check(self, usr, msg):
-        L.l4('special command parse started.')
-        if (not usr.bcast and not usr.mod): return msg
-
-        L.l4('bcaster or mod identified. checking for command match.')
-        join_msg = ' '.join(msg)
-        if not re.fullmatch(VALID_CMD, join_msg): return msg
-
-        L.l4('valid command match. cross referencing special commands list.')
-        cmd = re.findall(CMD, join_msg)[0]
-        if cmd not in self.Hakcbot.Commands._SPECIAL: return msg
-
-        L.l3(f'returning special command {join_msg}')
-
-        self._special_command = True
-        return [join_msg]
-
     def _get_title(self, arg):
         title = re.match(TITLE, arg)
 
         return title[0] if title else None
-
-    def _apply_cooldown(self, cmd, cd_len):
-        L.l1(f'Putting {cmd} on cooldown.')
-        self.Hakcbot.Commands._COMMANDS[cmd] = fast_time() + cd_len
-
-    def _get_command(self, word):
-        if not re.fullmatch(VALID_CMD, word): return NULL
-
-        cmd = re.findall(CMD, word)[0]
-        if (cmd not in self.Hakcbot.Commands._COMMANDS): return NULL
-
-        args = re.findall(ARG, word)[0]
-        if (args.startswith(',') or args.endswith(',')): return NULL
-        args = args.split(',')
-
-        L.l3(f'pre args filter | {args}')
-        for arg in args:
-            if self._get_title(arg.strip()): continue
-
-            for l in arg:
-
-                # allow special commands to have urls. required for url whitelist.
-                if ('.' in l and self._special_command): continue
-
-                # ensuring users cannot abuse commands to bypass secuirty control. underscores are fine because they pose
-                # no (known) threat and are commonly used in usernames.
-                if (not l.isalnum() and l != '_'):
-                    L.l3(f'"{l}" is not a valid command string.')
-                    return NULL
-
-        return cmd, tuple([a.strip() for a in args if a])

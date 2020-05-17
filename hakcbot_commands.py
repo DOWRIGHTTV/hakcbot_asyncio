@@ -7,7 +7,7 @@ import requests
 
 from time import strftime, localtime
 
-from config import BROADCASTER
+from config import BROADCASTER # pylint: disable=no-name-in-module
 from hakcbot_regex import fast_time, NULL, AK, ONE_MIN, THREE_MIN
 from hakcbot_spam import Spam
 from hakcbot_utilities import Log as L, CommandStructure as cs
@@ -16,7 +16,7 @@ from hakcbot_utilities import Log as L, CommandStructure as cs
 class Commands(cs):
 
     def __init__(self, Hakcbot):
-        self.Hakcbot = Hakcbot
+        self._Hakcbot = Hakcbot
 
         self.tricho_count = 0
 
@@ -26,7 +26,7 @@ class Commands(cs):
     # TODO: make sure this filters out commands that arent available for standard users.
     @cs.cmd('commands', THREE_MIN)
     def commands(self):
-        commands = [f'{c}()' for c in self._COMMANDS]
+        commands = [f'{c}()' for c, public in self._COMMANDS.items() if public]
 
         return ' | '.join(commands)
 
@@ -161,7 +161,7 @@ class Commands(cs):
 # ===============
 #   MOD COMMANDS
 # ===============
-
+    # NOTE: these are now broken!
     @cs.mod('permit')
     def permit(self, usr):
         self.Hakcbot.Spam.permit_list.add(usr)

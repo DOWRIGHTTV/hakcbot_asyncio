@@ -16,6 +16,7 @@ class AccountAge:
     adding to the queue will done as a async function to be compatible with the main bot code, but the class itself will be
     utiliting threads to achieve concurrent processing.
     '''
+    _start = False
 
     _check_in_progress = set()
     _whitelist = set()
@@ -25,13 +26,17 @@ class AccountAge:
         self._Automate = Automate
 
         self._wl_add = self._whitelist.add
-        self._in_prog_add = self._check_in_progress.add
         self._in_prog_del = self._check_in_progress.remove
-        self.aa_add = self._account_age.add
+        self.aa_add = self._account_age.add # pylint: disable=no-member
 
     @classmethod
     def start(cls, Hakcbot, Automate):
+        if (cls._start):
+            raise RuntimeError('Account Age has already been started!')
+
         L.l1('[+] Starting account age queue thread.')
+
+        cls._in_prog_add = cls._check_in_progress.add
 
         self = cls(Hakcbot, Automate)
         threading.Thread(target=self._account_age).start()
