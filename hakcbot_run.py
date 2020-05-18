@@ -29,7 +29,7 @@ class Hakcbot:
     online = False
     linecount = 0
     last_message = 0
-    uptime_message = 'hakbot is still initializing! try again in a bit.'
+    uptime_message = 'hakcbot is still initializing! try again in a bit.'
 
     quotes = {}
     titles = {}
@@ -246,7 +246,7 @@ class Threads:
             (i can tell from first message), i will remove the timeout when i see it, \
             sorry!'
 
-        await self._send_message(message, response)
+        self._send_message(message, response)
 
     @queue(name='file_task', func_type='thread')
     def file_task(self, obj_name):
