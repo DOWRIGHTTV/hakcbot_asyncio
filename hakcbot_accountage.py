@@ -27,7 +27,6 @@ class AccountAge:
 
         self._wl_add = self.whitelist.add
         self._in_prog_del = self._check_in_progress.remove
-        self.aa_add = self._account_age.add # pylint: disable=no-member
 
     @classmethod
     def start(cls, Hakcbot, Automate):
@@ -36,6 +35,7 @@ class AccountAge:
 
         L.l1('[+] Starting account age queue thread.')
 
+        cls._aa_add = cls._account_age.add # pylint: disable=no-member
         cls._in_prog_add = cls._check_in_progress.add
 
         self = cls(Hakcbot, Automate)
@@ -51,7 +51,7 @@ class AccountAge:
         if (usr.name not in cls._check_in_progress):
             cls._in_prog_add(usr.name)
 
-            cls.aa_add(usr) # pylint: disable=no-member
+            cls._aa_add(usr) # pylint: disable=no-member
 
     @queue(name='account_age', func_type='thread')
     def _account_age(self, user):
