@@ -5,7 +5,7 @@ import threading
 
 from collections import deque
 
-from config import BROADCASTER
+from config import BROADCASTER # pylint: disable=no-name-in-module
 from hakcbot_regex import AA
 from hakcbot_utilities import queue, Log as L
 
@@ -17,15 +17,15 @@ class AccountAge:
     utiliting threads to achieve concurrent processing.
     '''
     _start = False
-
     _check_in_progress = set()
-    _whitelist = set()
 
-    def __init__(self, Hakcbot, Automate):
+    whitelist = set()
+
+    def __init__(self, Hakcbot, Threads):
         self._Hakcbot = Hakcbot
-        self._Automate = Automate
+        self._Threads = Threads
 
-        self._wl_add = self._whitelist.add
+        self._wl_add = self.whitelist.add
         self._in_prog_del = self._check_in_progress.remove
         self.aa_add = self._account_age.add # pylint: disable=no-member
 
@@ -45,7 +45,8 @@ class AccountAge:
     def add_to_queue(cls, usr):
         '''adding users to account age queue if they are not whitelisted or have a special role.'''
 
-        if any([usr.bcast, usr.mod, usr.sub, usr.vip]) or (usr.name in cls._whitelist): return
+        #if any([usr.bcast, usr.mod, usr.sub, usr.vip]) or (usr.name in cls.whitelist): return
+        if (usr.permit) or (usr.name in cls.whitelist): return
 
         if (usr.name not in cls._check_in_progress):
             cls._in_prog_add(usr.name)
@@ -64,7 +65,7 @@ class AccountAge:
             L.l1(f'{user.name} added to account_age whitelist!')
 
         elif (result is AA.DROP):
-            self._Automate.timeout.add(user.name)
+            self._Threads.timeout.add(user.name)
 
             L.l1(f'user timeout | {user.name} >> {vd} | {aa}')
 

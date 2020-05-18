@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys as _sys
 import re as _re
 import time as _time
 import asyncio as _asyncio
@@ -10,6 +11,8 @@ from collections import namedtuple as _namedtuple
 fast_time = _time.time
 fast_sleep = _time.sleep
 afast_sleep = _asyncio.sleep
+
+write_err = _sys.stderr.write
 
 NULL = (None, None)
 ANNOUNCEMENT_INTERVAL = 120 * 60 # 120 minutes

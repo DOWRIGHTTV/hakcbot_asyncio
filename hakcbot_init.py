@@ -11,9 +11,9 @@ from hakcbot_utilities import load_from_file, Log as L
 class Initialize:
     def __init__(self):
         self._connect_process = [
-            f'PASS {PASS}',
-            f'NICK {IDENT}',
-            f'JOIN #{CHANNEL}',
+            f'PASS {PASS}', # pylint: disable=undefined-variable
+            f'NICK {IDENT}', # pylint: disable=undefined-variable
+            f'JOIN #{CHANNEL}', # pylint: disable=undefined-variable
             'CAP REQ :twitch.tv/tags'
         ]
 
@@ -24,7 +24,7 @@ class Initialize:
     @classmethod
     async def start(cls):
         self = cls()
-        self._start()
+        await self._start()
 
     async def _start(self):
         self._load_json_data()
@@ -54,13 +54,8 @@ class Initialize:
                 L.l1('hakcbot: NOW CONNECTED TO INTERWEBS. PREPARE FOR CYBER WARFARE.')
                 break
 
-    # TODO: remove this from init class. this should be a function of the main bot class and init should only
-    # be used for initial connection to the server.
     def _load_json_data(self):
         stored_data = load_from_file('config')
-
-        self._Hakcbot.titles = stored_data['titles']
-        self._Hakcbot.quotes = stored_data['quotes']
 
         self._host = stored_data['twitch']['host']
         self._port = stored_data['twitch']['port']

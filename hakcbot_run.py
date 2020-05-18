@@ -11,7 +11,6 @@ from socket import socket
 from config import * # pylint: disable=unused-wildcard-import
 from hakcbot_init import Initialize
 from hakcbot_spam import Spam
-from hakcbot_execute import Execute
 from hakcbot_commands import Commands
 from hakcbot_accountage import AccountAge
 
@@ -20,27 +19,34 @@ from hakcbot_utilities import dynamic_looper, queue
 from hakcbot_utilities import load_from_file, write_to_file, Log as L
 
 
+# TODO: make account age checks persistent/ stored in a json file or sqlite db
+# TODO: consider converting the broadcaster stored items in a sqlite DB eg quotes, titles, etc
+# TODO: make a persistent log of accounts that are bots, this could just be a called function after
+    # and AA timeout or user hook code catches a bot.
+
+
 class Hakcbot:
     online = False
     linecount = 0
     last_message = 0
     uptime_message = 'hakbot is still initializing! try again in a bit.'
 
+    quotes = {}
+    titles = {}
     announced_titles = {}
     _sock = socket()
 
-    def __init__(self):
-        self.Execute  = Execute(self)
-        self.Commands = Commands(self)
-
     @classmethod
     def start(cls):
-        Initialize.setup(cls)
+        cls._load_json_data()
+        cls.Commands = Commands(cls)
 
-        Automate.setup(cls)
-        Threads.start(cls)
-        AccountAge.start(cls, Automate)
+        # applying callback reference to access main bot objects
+        Initialize.setup(cls)
         Spam.setup(cls)
+
+        Threads.start(cls)
+        AccountAge.start(cls, Threads)
 
         uvloop.install()
 
@@ -50,7 +56,11 @@ class Hakcbot:
     async def main(self):
         await Initialize.start()
 
-        await asyncio.gather(self.hakc_general(), self.hakc_automation())
+        self._task_handler = self.Commands.task_handler
+        self._titles_get = self.titles.get
+        self._announced_titles_get = self.announced_titles.get
+
+        await asyncio.gather(self.hakc_general(), Automate.start())
 
     async def hakc_general(self):
         L.l1('[+] Starting main bot process.')
@@ -71,11 +81,12 @@ class Hakcbot:
         # closing socket | TODO: figure out how we can reconnect properly
         self._sock.close()
 
+    # TODO: break this out into multiple functions. its starting to get out of hand.
     async def _message_handler(self, data):
         # NOTE: probably dont need user definition
-        loop, user = asyncio.get_running_loop(), None
+        user = None
         if (data == 'PING :tmi.twitch.tv'):
-            await loop.sock_sendall(self._sock, 'PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
+            await self.send_message(pong=True)
 
         elif ('PRIVMSG' in data):
             spam_filter = Spam(data)
@@ -90,7 +101,12 @@ class Hakcbot:
                 # function will check if already in progress before sending to the queue
                 AccountAge.add_to_queue(user)
 
-                await self.Execute.task_handler(user, message)
+                response = self._task_handler(user, message)
+                if (response):
+                    await self.send_message(response)
+
+                await self._handle_titles(user.name)
+                self._update_trackers()
 
         # placeholder for when i want to track joins/ see if a user joins
         elif ('JOIN' in data):
@@ -101,40 +117,41 @@ class Hakcbot:
             L.l3(f'else: {data}')
             return
 
-        # T2 TITLES
-        if (not user): return
-        try:
-            titled_user = self.titles[user.name] # pylint: disable=no-member
-        except KeyError:
-            pass
-        else:
-            prior_announcement = self.announced_titles.get(user.name, None)
-            if titled_user['tier'] == 2 and not self.recently_announced(prior_announcement):
+    # T2 TITLES
+    async def _handle_titles(self, username):
+        titled_user = self._titles_get(username)
+        if (not titled_user): return
 
-                # already announced users - type > set()
-                self.announced_titles[user.name] = fast_time()
+        prior_announcement = self._announced_titles_get(username, None)
+        if (not prior_announcement) or (titled_user['tier'] == 2 and not self.recently_announced(prior_announcement)):
 
-                # announcing the user to chat
-                if (self.online):
-                    await self.announce_title(user.name, titled_user['title'])
+            # already announced users - type > dict()
+            self.announced_titles[username] = fast_time()
+
+            # announcing the user to chat
+            if (self.online):
+                await self.announce_title(username, titled_user['title'])
 
     async def announce_title(self, user, title):
         # message needs to be iterable for compatibility with commands.
         message = [f'attention! {user}, the {title}, has spoken.']
 
-        await self.send_message(*message)
+        await self.send_message(message)
 
     def recently_announced(self, prior_announcement):
-        if (not prior_announcement): return False
-
-        current_time = fast_time()
-        if (current_time - prior_announcement > ANNOUNCEMENT_INTERVAL):
+        if (fast_time() - prior_announcement > ANNOUNCEMENT_INTERVAL):
             return False
 
         return True
 
-    async def send_message(self, *msgs):
+    @classmethod
+    async def send_message(cls, msgs=None, pong=False):
         loop = asyncio.get_running_loop()
+        if (pong):
+            await loop.sock_sendall(cls._sock, b'PONG :tmi.twitch.tv\r\n')
+
+            return
+
         for msg in msgs:
 
             # ensuring empty returns to do not get sent over irc
@@ -142,30 +159,45 @@ class Hakcbot:
 
             L.l2(msg)
             await loop.sock_sendall(
-                self._sock, f'PRIVMSG #{CHANNEL} :{msg}\r\n'.encode('utf-8')
+                cls._sock, f'PRIVMSG #{CHANNEL} :{msg}\r\n'.encode('utf-8')
             )
 
-    # NOTE: we can probably clean this up and make the Automate class alittle more native like
-    async def hakc_automation(self):
-        L.l1('[+] Starting automated command process.')
+    @classmethod
+    def _update_trackers(cls):
+        # updating some bot tracking vars if message passes spam filter
+        cls.linecount += 1
+        cls.last_message = fast_time()
 
-        self.Automate = Automate()
-        await asyncio.gather(
-            self.Automate.reset_line_count(),
-            self.Automate.timeout(), # pylint: disable=no-value-for-parameter
-            *[self.Automate.timers(k, v) for k,v in self.Commands._AUTOMATE.items()])
+    @classmethod
+    def _load_json_data(cls):
+        stored_data = load_from_file('config')
+
+        cls.titles = stored_data['titles']
+        cls.quotes = stored_data['quotes']
 
 class Automate:
 
+    _Hakcbot = Hakcbot
+
     def __init__(self):
+        # direct reference for perf
+        self._send_message = self._Hakcbot.send_message
+        self._Commands = self._Hakcbot.Commands
+
         self.hakcusr = USER_TUPLE(
             'hakcbot', False, False, False,
             False, True, fast_time()
         )
 
     @classmethod
-    def setup(cls, Hakcbot):
-        cls._Hackbot = Hakcbot
+    async def start(cls):
+        L.l1('[+] Starting automated command process.')
+
+        self = cls()
+
+        await asyncio.gather(
+            self.reset_line_count(),
+            *[self.timers(k, v) for k,v in Commands.AUTOMATE.items()])
 
     @dynamic_looper(func_type='async')
     async def reset_line_count(self):
@@ -175,31 +207,26 @@ class Automate:
         return FIVE_MIN
 
     @dynamic_looper(func_type='async')
-    # NOTE: this is no longer working!!!
     async def timers(self, cmd, timer):
         if (self._Hakcbot.linecount >= 3):
-            # getattr(self.Hakcbot.Commands, cmd)(usr=self.hakcusr)
-            pass
+            try:
+                response = getattr(self._Commands, cmd)(usr=self.hakcusr)
+            except Exception as E:
+                L.l0(E)
+            else:
+                await self._send_message(response)
 
         return ONE_MIN * timer
-
-    @queue(name='timeout', func_type='async')
-    async def timeout(self, username):
-        message = f'/timeout {username} 3600 account age less than one day.'
-
-        response = f'{username}, you have been timed out for having an account age \
-            less that one day old. this is to prevent bot spam. if you are a human \
-            (i can tell from first message), i will remove the timeout when i see it, \
-            sorry!'
-
-        await self._Hakcbot.send_message(message, response)
 
 
 class Threads:
     def __init__(self, Hakcbot):
-        self.Hakcbot = Hakcbot
+        self._Hakcbot = Hakcbot
 
         self._last_status = None
+
+        # direct reference for perf
+        self._send_message = self._Hakcbot.send_message
 
     @classmethod
     def start(cls, Hakcbot):
@@ -207,18 +234,26 @@ class Threads:
 
         self = cls(Hakcbot)
         threading.Thread(target=self._uptime).start()
+        threading.Thread(target=self.timeout).start()
         threading.Thread(target=self.file_task).start()
 
-    # temp until we switch reference to queue object add function itself.
-    def add_file_task(self, obj_name):
-        self.file_task.add(obj_name) # pylint: disable=no-member
+    @queue(name='timeout', func_type='thread')
+    def timeout(self, username):
+        message = f'/timeout {username} 3600 account age less than one day.'
+
+        response = f'{username}, you have been timed out for having an account age \
+            less that one day old. this is to prevent bot spam. if you are a human \
+            (i can tell from first message), i will remove the timeout when i see it, \
+            sorry!'
+
+        await self._send_message(message, response)
 
     @queue(name='file_task', func_type='thread')
     def file_task(self, obj_name):
         config = load_from_file('config')
         if (obj_name not in config): return None
 
-        updated_attribute = getattr(self.Hakcbot, obj_name)
+        updated_attribute = getattr(self._Hakcbot, obj_name)
         if isinstance(updated_attribute, set):
             updated_attribute = list(updated_attribute)
 
@@ -231,31 +266,30 @@ class Threads:
         try:
             uptime = requests.get(f'https://decapi.me/twitch/uptime?channel={CHANNEL}')
         except Exception:
-            self.Hakcbot.uptime_message = 'Hakcbot is currently being a dumb dumb. :/'
+            self._Hakcbot.uptime_message = 'Hakcbot is currently being a dumb dumb. :/'
         else:
             uptime = uptime.text.strip('\n')
             if (uptime == 'dowright is offline'):
-                self.Hakcbot.online = False
-                self.Hakcbot.uptime_message = 'DOWRIGHT is OFFLINE'
+                self._Hakcbot.online = False
+                self._Hakcbot.uptime_message = 'DOWRIGHT is OFFLINE'
 
             else:
-                self.Hakcbot.online = True
-                self.Hakcbot.uptime_message = f'DOWRIGHT has been live for {uptime}'
+                self._Hakcbot.online = True
+                self._Hakcbot.uptime_message = f'DOWRIGHT has been live for {uptime}'
 
-        if (self._last_status != self.Hakcbot.online):
-            self._last_status = self.Hakcbot.online
+        if (self._last_status != self._Hakcbot.online):
+            self._last_status = self._Hakcbot.online
 
             # resetting tricho count and title announcements every stream
-            if (self.Hakcbot.online):
-                self.Hakcbot.Commands.tricho_count = 0
+            if (self._Hakcbot.online):
+                self._Hakcbot.Commands.tricho_count = []
 
-                self.Hakcbot.announced_titles.clear()
+                self._Hakcbot.announced_titles.clear()
 
-        return 90
+        return ONE_MIN
 
 def main():
-    Hb = Hakcbot()
-    Hb.start()
+    Hakcbot.start()
 
 if __name__ == '__main__':
     try:

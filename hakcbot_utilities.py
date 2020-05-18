@@ -9,8 +9,9 @@ import asyncio
 
 from collections import deque
 
+from config import * # pylint: disable=unused-wildcard-import
+from hakcbot_regex import * # pylint: disable=unused-wildcard-import
 from hakcbot_regex import NULL, fast_time, fast_sleep, afast_sleep
-from config import BROADCASTER, IDENT
 
 #will load json data from file, convert it to a python dict, then return as object
 def load_from_file(filename):
@@ -56,7 +57,7 @@ def dynamic_looper(*, func_type='thread'):
                     await afast_sleep(sleep_len)
 
         else:
-            raise ValueError(f'{func_type} if not a valid. must be thread, async.')
+            raise ValueError(f'{func_type} is not valid. must be thread, async.')
 
         return wrapper
     return decorator
@@ -109,7 +110,7 @@ def queue(name, *, func_type='thread'):
                 while True:
                     notified = job_wait(timeout=0)
                     if (not notified):
-                        await afast_sleep(1)
+                        await afast_sleep(.5)
                         continue
 
                     # clearing job notification
@@ -154,7 +155,9 @@ class Log:
 
     @classmethod
     def log(cls, message):
-        print(f'{IDENT}: {message}' if ':' not in message else message)
+        message = f'{message}\n'
+
+        write_err(f'{IDENT}: {message}' if ':' not in message else message)
 
     @level(0)
     def l0(self, message):
@@ -183,8 +186,8 @@ class Log:
 
 
 class CommandStructure:
-    _COMMANDS = {}
-    _AUTOMATE = {}
+    COMMANDS = {}
+    AUTOMATE = {}
     _SPECIAL  = {}
 
     # general methods for dealing with bot commands
@@ -204,9 +207,7 @@ class CommandStructure:
                 Log.l0(E)
 
             else:
-
-                if (response):
-                    return response
+                return response
 
     def _special_check(self, usr, msg):
         Log.l4('special command parse started.')
@@ -229,7 +230,7 @@ class CommandStructure:
         if not re.fullmatch(VALID_CMD, word): return NULL
 
         cmd = re.findall(CMD, word)[0]
-        if (cmd not in self._COMMANDS): return NULL
+        if (cmd not in self.COMMANDS): return NULL
 
         args = re.findall(ARG, word)[0]
         if (args.startswith(',') or args.endswith(',')): return NULL
@@ -252,20 +253,25 @@ class CommandStructure:
 
         return cmd, tuple([a.strip() for a in args if a])
 
+    def _get_title(self, arg):
+        title = re.match(TITLE, arg)
+
+        return title[0] if title else None
+
     # command wrappers/ utilites to make command maintenance and creation easier.
 
     @classmethod
     def on_cooldown(cls, c_name):
-        cd_time = cls._COMMANDS.get(c_name, None)
+        cd_time = cls.COMMANDS.get(c_name, None)
         if (fast_time() <= cd_time): return True
 
         return False
 
     @classmethod
     def cmd(cls, cmd, cd, *, auto=None):
-        cls._COMMANDS[cmd] = 1
+        cls.COMMANDS[cmd] = 1
         if (auto):
-            cls._AUTOMATE[cmd] = auto
+            cls.AUTOMATE[cmd] = auto
         def decorator(command_function):
             def wrapper(*args, usr):
                 if any([usr.bcast, usr.mod, usr.vip, usr.sub]): pass # cooldown bypass
@@ -276,7 +282,7 @@ class CommandStructure:
                     return NULL
                 else:
                     Log.l1(f'Putting {cmd} on cooldown.')
-                    cls._COMMANDS[cmd] = fast_time() + cd
+                    cls.COMMANDS[cmd] = fast_time() + cd
                     # making msgs an iterator for compatibility with multiple response commands.
                     return (response,)
             return wrapper
@@ -284,7 +290,7 @@ class CommandStructure:
 
     @classmethod
     def mod(cls, cmd, *, spc=False):
-        cls._COMMANDS[cmd] = 0
+        cls.COMMANDS[cmd] = 0
         if (spc):
             cls._SPECIAL[cmd] = 1
         def decorator(command_function):
@@ -297,7 +303,7 @@ class CommandStructure:
 
     @classmethod
     def brc(cls, cmd, *, spc=False):
-        cls._COMMANDS[cmd] = 0
+        cls.COMMANDS[cmd] = 0
         if (spc):
             cls._SPECIAL[cmd] = 1
         def decorator(command_function):

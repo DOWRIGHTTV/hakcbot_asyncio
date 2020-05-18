@@ -22,7 +22,7 @@ class Spam:
     _Hakcbot = None
 
     __slots__ = (
-        '_data', '_message'
+        '_data', '_message', '__dict__'
     )
 
     def __init__(self, data):
@@ -55,11 +55,6 @@ class Spam:
 
         if (not block_message):
             L.l2(f'{user.name}: {self._message}')
-
-            # NOTE: consider moving this back to main bot class.
-            # updating some bot tracking vars if message passes spam filter
-            self._Hakcbot.linecount += 1
-            self._Hakcbot.last_message = fast_time()
 
             return user, self._message.split()
 
@@ -132,6 +127,11 @@ class Spam:
                 permit = True
 
         return USER_TUPLE(username, bcast, mod, sub, vip, permit, timestamp), message
+
+    # NOTE: currently unused
+    # def adjust_blacklist(self, url=None, action=None):
+    #     config = load_from_file('config.json')
+    #     self.blacklist = set(config['blacklist'])
 
     @classmethod
     def _load_filters(cls):

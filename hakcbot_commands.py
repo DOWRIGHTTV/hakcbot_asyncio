@@ -7,18 +7,20 @@ import requests
 
 from time import strftime, localtime
 
-from config import BROADCASTER # pylint: disable=no-name-in-module
+from config import BROADCASTER
 from hakcbot_regex import fast_time, NULL, AK, ONE_MIN, THREE_MIN
 from hakcbot_spam import Spam
+from hakcbot_accountage import AccountAge
+from hakcbot_execute import * # pylint: disable=unused-wildcard-import
 from hakcbot_utilities import Log as L, CommandStructure as cs
 
 
 class Commands(cs):
 
+    tricho_count = []
+
     def __init__(self, Hakcbot):
         self._Hakcbot = Hakcbot
-
-        self.tricho_count = 0
 
 # ====================
 #   STANDARD COMMANDS
@@ -26,7 +28,7 @@ class Commands(cs):
     # TODO: make sure this filters out commands that arent available for standard users.
     @cs.cmd('commands', THREE_MIN)
     def commands(self):
-        commands = [f'{c}()' for c, public in self._COMMANDS.items() if public]
+        commands = [f'{c}()' for c, public in self.COMMANDS.items() if public]
 
         return ' | '.join(commands)
 
@@ -109,10 +111,10 @@ class Commands(cs):
     @cs.cmd('tricho', ONE_MIN)
     def tricho(self, count=None):
         if (not count):
-            return f'trichotillomania stream count: {self.tricho_count}'
+            return f'trichotillomania stream count: {len(self.tricho_count)}'
 
-        self.tricho_count += 1
-        return f'trichotillomania incremented, current: {self.tricho_count}'
+        self.tricho_count.append(1)
+        return f'trichotillomania incremented, current: {len(self.tricho_count)}'
 
     # TODO: make "self" argument return title of user that called
     @cs.cmd('title', ONE_MIN)
@@ -164,7 +166,7 @@ class Commands(cs):
     # NOTE: these are now broken!
     @cs.mod('permit')
     def permit(self, usr):
-        self.Hakcbot.Spam.permit_list.add(usr)
+        Spam.permit_list[usr] = fast_time()
         message  = f'/untimeout {usr}'
         response = f'{usr}, you can now post 1 link.'
 
@@ -172,7 +174,7 @@ class Commands(cs):
 
     @cs.mod('acctwl')
     def acctwl(self, usr):
-        self.Hakcbot.AccountAge.whitelist.add(usr)
+        AccountAge.whitelist.add(usr)
         message  = f'/untimeout {usr}'
         response = f'{usr}, your account age block has been lifted. chat away!'
 
@@ -186,7 +188,7 @@ class Commands(cs):
             message = f'action={action} is not a valid argument.'
         else:
             url = url.lower()
-            error = self.Hakcbot.Execute.adjust_whitelist(url, action=action)
+            error = adjust_whitelist(self, url, action=action)
             if (error):
                 message = error
 
@@ -224,7 +226,7 @@ class Commands(cs):
         if (not title and action != '0'): return 'title required for this action.', None
 
         action, tier, title = AK(int(action)), int(tier), title.strip('"').strip("'")
-        ALREADY_EXISTS = self.Hakcbot.titles.get(name, None)
+        ALREADY_EXISTS = self._Hakcbot.titles.get(name, None)
 
         if (action is AK.ADD):
             if (ALREADY_EXISTS):
@@ -240,8 +242,8 @@ class Commands(cs):
             if (action is AK.DEL):
                 return f'{name} has no title to remove.', None
 
-        message = self.Hakcbot.Execute.adjust_titles(
-            name, title, tier, action
+        message = adjust_titles(
+            self, name, title, tier, action
         )
 
         return message, None

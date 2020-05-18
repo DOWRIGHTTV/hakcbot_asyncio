@@ -5,6 +5,11 @@
     },
     "word_filter": [],
     "url_whitelist": [],
-    "titles": {},
+    "titles": {
+        "dowright": {
+            "title": "angry boi",
+            "tier": 2
+        }
+    },
     "quotes": {}
 }
