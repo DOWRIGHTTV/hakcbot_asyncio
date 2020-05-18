@@ -5,7 +5,7 @@ import time
 import traceback
 import asyncio
 
-from functools import cached_property
+from local_functools import cached_property
 
 from config import CHANNEL, BROADCASTER # pylint: disable=no-name-in-module
 from hakcbot_regex import * # pylint: disable=unused-wildcard-import
