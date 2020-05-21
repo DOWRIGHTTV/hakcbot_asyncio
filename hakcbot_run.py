@@ -95,7 +95,7 @@ class Hakcbot:
             if (not user and not message): return
 
             elif (not user):
-                self.send_message(message)
+                await self.send_message(message)
 
             else:
                 # function will check if already in progress before sending to the queue
