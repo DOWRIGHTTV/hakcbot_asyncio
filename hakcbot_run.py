@@ -6,6 +6,7 @@ import requests
 import time
 import traceback
 
+from random import randint
 from socket import socket
 
 from config import * # pylint: disable=unused-wildcard-import
@@ -208,7 +209,7 @@ class Automate:
 
     @dynamic_looper(func_type='async')
     async def timers(self, cmd, timer):
-        if (self._Hakcbot.linecount >= 3):
+        if (self._Hakcbot.linecount >= randint(3,7)):
             try:
                 response = getattr(self._Commands, cmd)(usr=self.hakcusr)
             except Exception as E:
@@ -216,7 +217,7 @@ class Automate:
             else:
                 await self._send_message(response)
 
-        return ONE_MIN * timer
+        return (ONE_MIN * timer) + randint(100,250)
 
 
 class Threads:

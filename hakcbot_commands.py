@@ -166,7 +166,7 @@ class Commands(cs):
     # NOTE: these are now broken!
     @cs.mod('permit')
     def permit(self, usr):
-        Spam.permit_list[usr] = fast_time()
+        Spam.permit_list[usr] = fast_time() + THREE_MIN
         message  = f'/untimeout {usr}'
         response = f'{usr}, you can now post 1 link.'
 
