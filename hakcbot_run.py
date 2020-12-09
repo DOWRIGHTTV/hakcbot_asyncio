@@ -98,6 +98,10 @@ class Hakcbot:
             elif (not user):
                 await self.send_message(message)
 
+            # TODO: temporary until better location is found.
+            elif any([word.startswith('!') and len(word) > 2 for word in message]):
+                await self.send_message('invalid command syntax. try: command() instead of !command.')
+
             else:
                 # function will check if already in progress before sending to the queue
                 AccountAge.add_to_queue(user)

@@ -20,7 +20,6 @@ __all__ = (
     'adjust_whitelist', 'adjust_titles'
 )
 
-
 def adjust_whitelist(Bot, url, action):
     current_whitelist = Bot.url_whitelist
     if (action is AK.ADD):

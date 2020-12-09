@@ -41,7 +41,8 @@ class Spam:
         '''primary processing logic for spam module. will return a user namedtuple and a list
         containing all words in message.'''
 
-        # if there is a return an exception was raise // returning
+        # returning None if there was an issue parsing the message which is identified by the parser
+        # also returning none.
         user, self._message = self._format_data()
         if (not user):
             return None, None
@@ -58,7 +59,7 @@ class Spam:
 
             return user, self._message.split()
 
-    # hook for implemented custom, real time filters to prevent bots, spam, etc.
+    # hook for implementing custom, real time filters to prevent bots, spam, etc.
     def _custom_filter_hook(self):
         pass
 
