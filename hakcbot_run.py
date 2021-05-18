@@ -180,6 +180,7 @@ class Hakcbot:
         cls.titles = stored_data['titles']
         cls.quotes = stored_data['quotes']
 
+
 class Automate:
 
     _Hakcbot = Hakcbot
@@ -246,12 +247,13 @@ class Threads:
     def timeout(self, username):
         message = f'/timeout {username} 3600 account age less than one day.'
 
-        response = f'{username}, you have been timed out for having an account age \
-            less that one day old. this is to prevent bot spam. if you are a human \
-            (i can tell from first message), i will remove the timeout when i see it, \
-            sorry!'
+        response = (
+            f'{username}, you have been timed out for having an account age less that '
+            'one day old. this is to prevent bot spam. if you are a human (i can tell '
+            'from first message), i will remove the timeout when i see it, sorry!'
+        )
 
-        self._send_message(message, response)
+        self._send_message((message, response))
 
     @queue(name='file_task', func_type='thread')
     def file_task(self, obj_name):

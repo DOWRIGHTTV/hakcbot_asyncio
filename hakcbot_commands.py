@@ -207,7 +207,7 @@ class Commands(cs):
     @cs.brc('loglevel')
     def loglevel(self, lvl=None):
         if (not lvl):
-            return f'current log level:{L.LEVEL}'
+            return f'current log level:{L.LEVEL}', None
 
         vl = L.valid_levels
         if (lvl in vl):

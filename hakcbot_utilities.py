@@ -13,6 +13,11 @@ from config import * # pylint: disable=unused-wildcard-import
 from hakcbot_regex import * # pylint: disable=unused-wildcard-import
 from hakcbot_regex import NULL, fast_time, fast_sleep, afast_sleep
 
+def get_local_time():
+    lt = time.localtime()
+
+    return f'{lt.tm_hour}:{lt.tm_minute}:{lt.tm_sec}'
+
 #will load json data from file, convert it to a python dict, then return as object
 def load_from_file(filename):
     if not filename.endswith('.json'):
@@ -160,27 +165,27 @@ class Log:
         write_err(f'{IDENT}: {message}' if ':' not in message else message)
 
     @level(0)
-    def l0(self, message):
+    def l0(message): # pylint: disable=no-self-argument
         '''raised/caught exceptions.'''
         pass
 
     @level(1)
-    def l1(self, message):
+    def l1(message): # pylint: disable=no-self-argument
         '''bot logic eg. putting command on cooldown.'''
         pass
 
     @level(2)
-    def l2(self, message):
+    def l2(message): # pylint: disable=no-self-argument
         '''local generated chat messages.'''
         pass
 
     @level(3)
-    def l3(self, message):
+    def l3(message): # pylint: disable=no-self-argument
         '''informational output.'''
         pass
 
-    @level(4)
-    def l4(self, message):
+    @level(4) # pylint
+    def l4(message): # pylint: disable=no-self-argument
         '''debug output.'''
         pass
 
@@ -219,7 +224,9 @@ class CommandStructure:
 
         Log.l4('valid command match. cross referencing special commands list.')
         cmd = re.findall(CMD, join_msg)[0]
-        if cmd not in self._SPECIAL: return msg
+
+        # return 1 if special, 0 if not. if 0 returned, message will not be altered.
+        if not self._SPECIAL.get(cmd): return msg
 
         Log.l3(f'returning special command {join_msg}')
 
@@ -272,10 +279,12 @@ class CommandStructure:
         cls.COMMANDS[cmd] = 1
         if (auto):
             cls.AUTOMATE[cmd] = auto
+
         def decorator(command_function):
             def wrapper(*args, usr):
                 if any([usr.bcast, usr.mod, usr.vip, usr.sub]): pass # cooldown bypass
                 elif cls.on_cooldown(cmd): return NULL
+
                 try:
                     response = command_function(*args)
                 except TypeError:
@@ -283,33 +292,37 @@ class CommandStructure:
                 else:
                     Log.l1(f'Putting {cmd} on cooldown.')
                     cls.COMMANDS[cmd] = fast_time() + cd
+
                     # making msgs an iterator for compatibility with multiple response commands.
                     return (response,)
+
             return wrapper
         return decorator
 
     @classmethod
     def mod(cls, cmd, *, spc=False):
         cls.COMMANDS[cmd] = 0
-        if (spc):
-            cls._SPECIAL[cmd] = 1
+        cls._SPECIAL[cmd] = 1 if spc else 0
+
         def decorator(command_function):
             def wrapper(*args, usr):
                 if (not usr.mod and not usr.bcast): return NULL
 
                 return command_function(*args)
+
             return wrapper
         return decorator
 
     @classmethod
     def brc(cls, cmd, *, spc=False):
         cls.COMMANDS[cmd] = 0
-        if (spc):
-            cls._SPECIAL[cmd] = 1
+        cls._SPECIAL[cmd] = 1 if spc else 0
+
         def decorator(command_function):
             def wrapper(*args, usr):
                 if (not usr.bcast): return NULL
 
-                return command_function(*args)
+                return command_function(args)
+
             return wrapper
         return decorator
