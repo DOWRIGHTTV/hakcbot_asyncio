@@ -44,6 +44,10 @@ class Commands(cs):
     def youtube(self):
         return "DOWRIGHT's YouTube --> https://www.youtube.com/channel/UCKAiTcsiD50oZvf9h0xbvCg"
 
+    @cs.cmd('playlist', THREE_MIN)
+    def playlist(self):
+        return "DOWRIGHT's YouTube --> https://www.youtube.com/playlist?list=PLwZJPKdsVZZW9l2EJlGZb7jFQwuPj4XHo"
+
     @cs.cmd('github', THREE_MIN)
     def github(self):
         return "DOWRIGHT's GitHub --> https://github.com/DOWRIGHTTV"
@@ -57,11 +61,11 @@ class Commands(cs):
     @cs.cmd('dnx', THREE_MIN)
     def dnx(self):
         return 'DNX is a NextGen Firewall for the consumer and small business market. \
-            Open source --> https://github.com/DOWRIGHTTV/DNX-FWALL-CMD'
+            Open source --> https://github.com/DOWRIGHTTV/dnxfirewall'
 
     @cs.cmd('demo', THREE_MIN)
     def demo(self):
-        return 'Technical demo of DNX --> https://youtu.be/6NvRXlNjpOc'
+        return 'Technical demo of dnxfirewall (VERY OLD) --> https://youtu.be/6NvRXlNjpOc'
 
     @cs.cmd('brave', THREE_MIN)
     def brave(self):
@@ -102,6 +106,8 @@ class Commands(cs):
                     "inspection and filtering is an I/O bound task.")
 
         return diatribe
+
+
 
 
 # ========================

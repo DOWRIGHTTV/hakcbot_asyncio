@@ -100,7 +100,7 @@ class Hakcbot:
 
             # TODO: temporary until better location is found.
             elif any([word.startswith('!') and len(word) > 2 for word in message]):
-                await self.send_message('invalid command syntax. try: command() instead of !command.')
+                await self.send_message(['invalid command syntax. try: command() instead of !command.'])
 
             else:
                 # function will check if already in progress before sending to the queue
